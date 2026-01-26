@@ -131,57 +131,67 @@ const JournalEntry = ({ data, onDeleteSuccess, isChatActive, onSelect, isSelecte
                 <div className="overflow-y-auto w-[380px] h-[calc(100%-25.67px)] left-[3.50px] top-[25.67px] absolute bg-white shadow-[-5px_0px_15px_rgba(0,0,0,0.02)]">
                     {activeTab === 'standard' ? (
                         <>
-                            {/* --- Standard View (기존 코드와 동일) --- */}
-                            <div className="w-full h-[110px] left-[0px] top-[0px] absolute overflow-hidden">
-                                <div className="left-[15px] top-[25px] absolute text-center justify-start text-black text-2xl font-normal font-['Archivo'] leading-5">Today Mood</div>
-                                <div className="w-[38%] left-[15px] top-[51px] absolute border-b-2 border-black" />
-                                <div className="flex left-[17px] top-[55px] h-12 absolute justify-between w-full items-center pr-8">
-                                    {['delight', 'happy', 'soso', 'angry', 'sad'].map(mood => (
-                                        <img key={mood} className={`h-10 w-auto ${data.standard.mood === mood ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/emotion/${mood}.png`} alt={mood} onError={(e) => e.target.style.display='none'} />
-                                    ))}
-                                </div>
-                            </div>
-                
-                            <div className="w-full h-[110px] left-[0px] top-[110px] absolute overflow-hidden">
-                                <div className="left-[15px] top-[25px] absolute text-center justify-start text-black text-2xl font-normal font-['Archivo'] leading-5">Weather</div>
-                                <div className="w-[27%] left-[15px] top-[51px] absolute border-b-2 border-black" />
-                                <div className="flex left-[17px] right-[17px] top-[65px] h-12 absolute justify-between w-auto items-center">
-                                    {['sun', 'cloud', 'dark', 'rain', 'snow'].map(weather => (
-                                        <img key={weather} className={`h-10 w-auto ${data.standard.weather === weather ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/weather/${weather}.png`} alt={weather} onError={(e) => e.target.style.display='none'} />
-                                    ))}
-                                </div>
-                            </div>
-                
-                            <div className="w-full h-[105px] left-[0px] top-[220px] absolute overflow-hidden">
-                                <div className="left-[15px] top-[25px] absolute text-center text-black text-2xl font-normal font-['Archivo'] leading-5">Timestamp</div>
-                                <div className="w-[34%] left-[15px] top-[51px] absolute border-b-2 border-black" />
-                                <div className="flex h-14 items-center justify-between top-[52px] absolute left-[15px] right-[15px]">
-                                    <div className="w-[200px] h-[37px] bg-zinc-300/30 rounded-[10px] flex items-center justify-center">
-                                        <span className="text-black text-2xl font-normal font-['Archivo'] leading-none">{data.standard.date}</span>
-                                    </div>
-                                    <div className="px-4 h-[37px] w-[140px] bg-zinc-300/30 rounded-[10px] flex items-center justify-center">
-                                        <span className="text-black text-2xl font-normal font-['Archivo'] leading-none">{data.standard.time}</span>
-                                    </div>
-                                </div>
-                            </div>
-                
-                            <div className="w-full h-[110px] left-[0px] top-[calc(220px+105px)] absolute overflow-hidden">
-                                <div className="left-[15px] top-[25px] absolute text-center text-black text-2xl font-normal font-['Archivo'] leading-5">Tags</div>
-                                <div className="w-[16%] left-[15px] top-[51px] absolute border-b-2 border-black" />
-                                <div className="w-[calc(100%-30px)] flex h-14 items-center left-[15px] right-[15px] top-[52px] relative">
-                                    <div className="flex-1 max-w-[100%] h-11 bg-gray-300/30 rounded-[10px] flex items-center justify-start px-3 gap-2 overflow-x-auto scrollbar-hide">
-                                        {/* 🌟 filter를 추가하여 'unsorted' 태그를 숨깁니다. */}
-                                        {data.standard.tags
-                                            .filter(tag => tag !== 'unsorted') 
-                                            .map((tag, index) => (
-                                                <div key={index} className="bg-[#BFB0EF] rounded-[5px] w-auto h-[25px] flex items-center justify-center px-2 gap-1 whitespace-nowrap">
-                                                    <span className="text-neutral-600 text-sm font-normal font-['Archivo']">{tag}</span>
-                                                </div>
-                                            ))
-                                        }
-                                    </div>
-                                </div>
-                            </div>
+                            {/* --- Standard View --- */}
+{/* Today Mood 섹션 */}
+<div className="w-full h-[111px] left-[0px] top-[0px] absolute overflow-hidden">
+    <div className="left-[15px] top-[25px] absolute text-center justify-start text-black text-2xl font-normal font-['Archivo'] leading-5">Today Mood</div>
+    
+    <div className="flex left-[17px] top-[55px] h-12 absolute justify-between w-full items-center pr-8">
+        {['delight', 'happy', 'soso', 'angry', 'sad'].map(mood => (
+            <img key={mood} className={`h-10 w-auto ${data.standard.mood === mood ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/emotion/${mood}.png`} alt={mood} onError={(e) => e.target.style.display='none'} />
+        ))}
+    </div>
+    {/* 📏 가로 경계선: w-[92%] 부분을 수정하여 길이 조절 가능 */}
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[92%] h-[1px] bg-gray-300/50" />
+</div>
+
+{/* Weather 섹션 */}
+<div className="w-full h-[118px] left-[0px] top-[110px] absolute overflow-hidden">
+    <div className="left-[15px] top-[25px] absolute text-center justify-start text-black text-2xl font-normal font-['Archivo'] leading-5">Weather</div>
+    
+    <div className="flex left-[17px] right-[17px] top-[65px] h-12 absolute justify-between w-auto items-center">
+        {['sun', 'cloud', 'dark', 'rain', 'snow'].map(weather => (
+            <img key={weather} className={`h-10 w-auto ${data.standard.weather === weather ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/weather/${weather}.png`} alt={weather} onError={(e) => e.target.style.display='none'} />
+        ))}
+    </div>
+    {/* 📏 가로 경계선 */}
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[92%] h-[1px] bg-gray-300/50" />
+</div>
+
+{/* Timestamp 섹션 */}
+<div className="w-full h-[114px] left-[0px] top-[220px] absolute overflow-hidden">
+    <div className="left-[15px] top-[25px] absolute text-center text-black text-2xl font-normal font-['Archivo'] leading-5">Timestamp</div>
+   
+    <div className="flex h-14 items-center justify-between top-[52px] absolute left-[15px] right-[15px]">
+        <div className="w-[200px] h-[37px] bg-zinc-300/30 rounded-[10px] flex items-center justify-center">
+            <span className="text-black text-2xl font-normal font-['Archivo'] leading-none">{data.standard.date}</span>
+        </div>
+        <div className="px-4 h-[37px] w-[140px] bg-zinc-300/30 rounded-[10px] flex items-center justify-center">
+            <span className="text-black text-2xl font-normal font-['Archivo'] leading-none">{data.standard.time}</span>
+        </div>
+    </div>
+    {/* 📏 가로 경계선 */}
+    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[92%] h-[1px] bg-gray-300/50" />
+</div>
+
+{/* Tags 섹션 */}
+<div className="w-full h-[110px] left-[0px] top-[calc(220px+105px)] absolute overflow-hidden">
+    <div className="left-[15px] top-[25px] absolute text-center text-black text-2xl font-normal font-['Archivo'] leading-5">Tags</div>
+
+    <div className="w-[calc(100%-30px)] flex h-14 items-center left-[15px] right-[15px] top-[52px] relative">
+        <div className="flex-1 max-w-[100%] h-11 bg-gray-300/30 rounded-[10px] flex items-center justify-start px-3 gap-2 overflow-x-auto scrollbar-hide">
+            {data.standard.tags
+                .filter(tag => tag !== 'unsorted') 
+                .map((tag, index) => (
+                    <div key={index} className="bg-[#BFB0EF] rounded-[5px] w-auto h-[25px] flex items-center justify-center px-2 gap-1 whitespace-nowrap">
+                        <span className="text-neutral-600 text-sm font-normal font-['Archivo']">{tag}</span>
+                    </div>
+                ))
+            }
+        </div>
+    </div>
+    
+</div>
                         </>
                     ) : (
                         /* --- Insight View (activeTab === 'insight'일 때 실행) --- */

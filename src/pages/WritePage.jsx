@@ -1135,15 +1135,15 @@ export default function WritePage() {
                     
                     {/* 1. Today Mood (이미지 버튼화) */}
                     <div className="w-full h-[90px] bg-neutral-50 rounded-tr-[35px] p-3">
-                        <div className="text-xl mb-2">Today Mood</div>
+                        <div className="text-xl mb-1">Today Mood</div>
                         <div className="flex justify-between gap-1">
                             {['delight', 'happy', 'soso', 'angry', 'sad'].map((m) => (
                                 <button 
                                     key={m}
                                     onClick={() => setSelectedMood(m)}
-                                    className={`p-1 rounded-md transition-all ${selectedMood === m ? 'bg-amber-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
+                                    className={`p-0.2 rounded-md transition-all ${selectedMood === m ? 'bg-amber-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
                                 >
-                                    <img className="h-7 w-auto" src={`/emotion/${m}.png`} alt={m} />
+                                    <img className="h-10 w-auto" src={`/emotion/${m}.png`} alt={m} />
                                 </button>
                             ))}
                         </div>
@@ -1157,9 +1157,9 @@ export default function WritePage() {
                                 <button 
                                     key={w}
                                     onClick={() => setSelectedWeather(w)}
-                                    className={`p-1 rounded-md transition-all ${selectedWeather === w ? 'bg-blue-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
+                                    className={`p-0.3 rounded-md transition-all ${selectedWeather === w ? 'bg-blue-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
                                 >
-                                    <img className="h-7 w-auto" src={`/weather/${w}.png`} alt={w} />
+                                    <img className="h-8 w-auto" src={`/weather/${w}.png`} alt={w} />
                                 </button>
                             ))}
                         </div>
