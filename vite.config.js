@@ -7,23 +7,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
+  // 🌟 [수정] 배포 시에는 브라우저가 직접 서버(Render)로 요청을 보내므로 proxy가 필요 없습니다.
   server: {
-    proxy: {
-      // '/user'로 시작하는 요청을 백엔드 주소로 전달
-      '/user': {
-        target: 'http://localhost:8080', // 실제 백엔드 서버 주소로 수정하세요!
-        changeOrigin: true,
-        secure: false,
-      },
-    },
     allowedHosts: [
-      'https://2525d27212aa.ngrok-free.app', // 현재 에러난 특정 주소 허용
-      '.ngrok-free.app',              // 모든 ngrok 주소를 허용 (추천)
-      
+      '.ngrok-free.app', // 로컬 테스트용 ngrok 허용 유지
     ]
   },
   resolve: {
     alias: {
+      // 🌟 @ 경로를 src 폴더로 매핑 (코드 작성이 훨씬 편해집니다)
       "@": path.resolve(__dirname, "./src"),
     },
   },
