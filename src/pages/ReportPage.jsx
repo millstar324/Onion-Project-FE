@@ -1,4 +1,4 @@
-import { Edit2, ChevronRight, RotateCw,  ChevronLeft } from 'lucide-react';
+import { Edit2, ChevronRight, RotateCw,  ChevronLeft, Sparkles } from 'lucide-react';
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useMemo, useState, useEffect } from 'react';
 import { OrbitControls } from '@react-three/drei';
@@ -483,103 +483,135 @@ export default function ReportPage() {
                     </div>
 
                     {/* 오른쪽 정보 카드 컨테이너 */}
-                    <div className="w-[55%] h-full flex flex-col items-start justify-center overflow-hidden relative p-8 animate-in fade-in slide-in-from-right duration-700">
-                        <div className="flex flex-col items-center gap-6 w-full max-w-[702px]">
+                    
+                    {/* 🌟 pr-20을 주어 스크린 오른쪽 끝과 확실한 거리를 두었습니다. */}
+                    <div className="w-[55%] h-full flex flex-col items-start justify-center pl-4 pr-20 py-12 animate-in fade-in slide-in-from-right duration-700 overflow-hidden">
+                        
+                        {/* 내부 레이아웃 래퍼 */}
+                        <div className="flex flex-col gap-5 w-full h-full max-w-[720px]">
                             
-                            <div className="flex flex-row items-center justify-between w-full gap-6">
-                                {/* [1] Tree Age */}
-                                <div className="w-60 min-h-[200px] relative bg-zinc-500/10 rounded-lg shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-6">
-                                    <div className="text-neutral-700 text-xl font-normal font-['Archivo']">The age of your tree</div>
-                                    <div className="mt-4 text-black text-8xl font-normal font-['Archivo'] leading-none">{treeAge}</div>
-                                    <div className="absolute right-12 bottom-6 text-neutral-700 text-xl">days</div>
+                            {/* --- 상단 섹션: Tree Age (비중 확대) & Mood --- */}
+                            {/* flex-[1.2]로 높이 비율 유지 */}
+                            <div className="flex flex-row items-stretch justify-between w-full gap-4 flex-[1.2] min-h-0">
+                                
+                                {/* [1] Tree Age: 박스를 꽉 채우는 압도적인 숫자 크기 */}
+                                <div className="w-[40%] flex flex-col justify-center bg-zinc-500/10 rounded-[30px] shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-6 relative overflow-hidden">
+                                    {/* 🌟 타이틀: 왼쪽 상단 고정 */}
+                        <div className="text-neutral-500 text-xs font-bold font-['Archivo'] uppercase tracking-widest absolute top-6 left-6">
+                            Tree Age
+                        </div>
+                        
+                        {/* 🌟 숫자와 텍스트를 한 줄(flex-row)로 묶고 오른쪽 정렬(justify-end) */}
+                        <div className="translate-y-5 flex flex-row items-baseline justify-end w-full gap-2 mb-1 pr-2">
+                            {/* 나이 숫자: 압도적인 크기 유지 */}
+                            <div className="text-black text-[clamp(5rem,13vh,8.5rem)] font-normal font-['Archivo'] leading-none tracking-tighter drop-shadow-sm">
+                                {treeAge}
+                            </div>
+                            
+                            {/* days old: 숫자 옆에 나란히 위치 */}
+                            <div className="text-neutral-600 text-lg font-['Archivo'] font-medium opacity-80 whitespace-nowrap pb-1">
+                                days old
+                            </div>
+                        </div>
                                 </div>
-        
+                    
                                 {/* [2] Mood Stats */}
-                                {/* 🌟 [2] Mood Stats (수정된 섹션) */}
-                                <div className="flex-1 min-h-[200px] relative bg-zinc-500/10 rounded-lg shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-6 transition-all">
-                                    <div className="flex justify-between items-center mb-8">
-                                        <div className="text-neutral-700 text-2xl font-['Archivo']">
-                                            {moodScope === 'week' ? 'Weekly' : moodScope === 'month' ? 'Monthly' : 'Total'} Mood
-                                        </div>
-                                        {/* 토글 버튼 */}
+                                <div className="flex-1 flex flex-col bg-zinc-500/10 rounded-[30px] shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-5">
+                                    <div className="flex justify-between items-center mb-2 shrink-0">
+                                        <div className="text-neutral-700 text-lg font-['Archivo'] font-bold">Mood Trends</div>
                                         <button 
                                             onClick={cycleMoodScope}
-                                            className="p-2 bg-white/20 hover:bg-white/40 rounded-full transition-colors flex items-center gap-2 text-sm font-['Archivo']"
+                                            className="px-2.5 py-1 bg-zinc-800/10 hover:bg-zinc-800/20 rounded-full transition-all flex items-center gap-1.5 text-[10px] font-bold text-neutral-700"
                                         >
-                                            <RotateCw size={16} /> 
+                                            <RotateCw size={12} /> 
                                             <span>{moodScope.toUpperCase()}</span>
                                         </button>
                                     </div>
-        
-                                    <div className="flex justify-between items-end h-24 w-full pr-40">
-                                        {currentMoodStats.map((item, i) => (
-                                            <div key={i} className="flex flex-col items-center gap-2 group">
-                                                {/* 0개여도 막대기가 미세하게 보이게 최소 높이 조절 가능 */}
-                                                <div 
-                                                    className={`w-3 bg-gradient-to-b ${item.color} rounded-full transition-all duration-700 ease-out`} 
-                                                    style={{ height: `${(item.count / maxMoodCount) * 80}px`, minHeight: item.count > 0 ? '4px' : '0px' }} 
-                                                />
-                                                <span className="text-[10px] text-neutral-500 uppercase">{item.key[0]}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-        
-                                    {/* 우측 범례 영역 */}
-                                    <div className="absolute right-6 top-16 flex flex-col gap-1 text-black text-sm items-end font-['Archivo']">
-                                        {currentMoodStats.map((item, i) => (
-                                            <div key={i} className="flex items-center gap-2 opacity-80">
-                                                <span>{item.label} - {item.count}</span>
-                                                <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${item.color}`} />
-                                            </div>
-                                        ))}
+                    
+                                    <div className="flex flex-row items-end justify-between flex-1 min-h-0 pt-2">
+                                        <div className="flex justify-around items-end h-full w-[60%] pb-1 gap-2 border-b border-zinc-400/20">
+                                            {currentMoodStats.map((item, i) => (
+                                                <div key={i} className="flex flex-col items-center gap-1 flex-1 max-w-[22px] h-full justify-end">
+                                                    <div 
+                                                        className={`w-full bg-gradient-to-b ${item.color} rounded-t-full transition-all duration-1000 ease-out shadow-sm`} 
+                                                        style={{ height: `${Math.max((item.count / maxMoodCount) * 100, 8)}%` }} 
+                                                    />
+                                                    <span className="text-[9px] text-neutral-500 font-black">{item.key[0].toUpperCase()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        <div className="flex flex-col justify-center gap-1 text-neutral-800 text-[10px] items-end font-['Archivo'] font-medium h-full pr-2">
+                                            {currentMoodStats.map((item, i) => (
+                                                <div key={i} className="flex items-center gap-2 opacity-90">
+                                                    <span>{item.label}</span>
+                                                    <span className="w-4 text-right font-bold text-emerald-700">{item.count}</span>
+                                                    <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${item.color} shadow-sm`} />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-        
-                            {/* [3] Tag Stats */}
-                            <div className="w-full min-h-[190px] relative bg-zinc-500/10 rounded-lg shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-6">
-                                <div className="text-neutral-700 text-2xl font-normal font-['Archivo'] mb-6">Monthly tags statistics</div>
-                                <div className="flex flex-wrap gap-x-8 gap-y-4 px-2">
-                                    {tagData.map((tag, i) => (
-                                        <div key={i} className="flex flex-col gap-1.5 w-[calc(33%-16px)] min-w-[140px]">
-                                            <div className="flex justify-between text-sm font-['Archivo']">
-                                                <span className="text-neutral-700"># {tag.name}</span>
-                                                <span className="text-neutral-500">{tag.count}</span>
+                    
+                            {/* --- 중간 섹션: Tag Stats (비중 축소) --- */}
+                            {/* flex-[0.8]로 낮게 설정하여 키워드 박스에 공간 양보 */}
+                            <div className="w-full bg-zinc-500/10 rounded-[30px] shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-5 flex-[0.8] flex flex-col min-h-0">
+                                <div className="text-neutral-700 text-sm font-bold font-['Archivo'] mb-3 flex items-center gap-2">
+                                    <div className="w-1 h-3.5 bg-emerald-500 rounded-full"></div>
+                                    Monthly Tags
+                                </div>
+                                <div className="grid grid-cols-3 gap-x-8 gap-y-3 flex-1 items-center">
+                                    {tagData.slice(0, 6).map((tag, i) => (
+                                        <div key={i} className="flex flex-col gap-1">
+                                            <div className="flex justify-between text-[11px] font-['Archivo'] font-bold">
+                                                <span className="text-neutral-700 truncate"># {tag.name}</span>
+                                                <span className="text-emerald-600">{tag.count}</span>
                                             </div>
-                                            <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                            <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
                                                 <div className={`h-full ${tag.color || 'bg-blue-400'} rounded-full transition-all duration-1000`} style={{ width: `${(tag.count / maxTagCount) * 100}%` }} />
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-        
-                            {/* [4] Keyword Stats (Word Cloud) */}
-                            <div className="w-full min-h-[220px] relative bg-zinc-500/10 rounded-lg shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-6">
-                                <div className="text-neutral-700 text-2xl font-normal font-['Archivo'] mb-4">Discovery Keywords statistics</div>
-                                <div className="relative w-full h-32 mt-4 flex flex-wrap justify-center items-center gap-x-6 gap-y-2">
-                                    {keywordData.map((kw, i) => {
-                                        const fontSize = maxKwCount === minKwCount ? 20 : ((kw.count - minKwCount) / (maxKwCount - minKwCount)) * (36 - 14) + 14;
-                                        return (
-                                            <div key={i} className="cursor-default transition-all duration-300 hover:scale-125 hover:text-black text-neutral-600 font-['Archivo']"
-                                                style={{
-                                                    fontSize: `${fontSize}px`,
-                                                    fontWeight: kw.count > maxKwCount * 0.7 ? '700' : '400',
-                                                    animation: `floating 3s ease-in-out infinite`,
-                                                    animationDelay: `${(i * 0.5) % 2}s`,
-                                                    opacity: 0.6 + (kw.count / maxKwCount) * 0.4
-                                                }}>
-                                                {kw.text}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <style dangerouslySetInnerHTML={{ __html: `@keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }` }} />
-                            </div>
+                    
+                            {/* --- 하단 섹션: Keyword Stats (가장 넓은 공간 할당, 글자 크기 최적화) --- */}
+                    <div className="w-full flex-[1.5] bg-zinc-500/20 rounded-[30px] shadow-xl outline outline-[1px] outline-white/50 backdrop-blur-3xl p-6 flex flex-col min-h-0 border-t border-white/20">
+                        <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-3 tracking-tight flex items-center gap-2 shrink-0">
+                            <Sparkles size={18} className="text-emerald-600" />
+                            Discovery Keywords
+                        </div>
+                        
+                        {/* 🌟 글자 짤림 방지를 위해 gap 조절 및 폰트 크기 축소 */}
+                        <div className="flex-1 relative flex flex-wrap justify-center items-center gap-x-5 gap-y-3 overflow-hidden content-center px-2">
+                            {keywordData.length > 0 ? keywordData.map((kw, i) => {
+                                // 🌟 폰트 크기 범위를 (14px ~ 26px)로 줄여서 박스 안에 쏙 들어오게 함
+                                const fontSize = maxKwCount === minKwCount 
+                                    ? 18 
+                                    : ((kw.count - minKwCount) / (maxKwCount - minKwCount)) * (26 - 14) + 14;
+                                
+                                return (
+                                    <div key={i} className="cursor-default transition-all duration-500 hover:scale-110 hover:text-emerald-700 text-neutral-700 font-['Archivo'] font-semibold whitespace-nowrap"
+                                        style={{
+                                            fontSize: `${fontSize}px`,
+                                            animation: `floating ${3 + (i % 2)}s ease-in-out infinite`,
+                                            animationDelay: `${i * 0.2}s`,
+                                            opacity: 0.7 + (kw.count / maxKwCount) * 0.3,
+                                            lineHeight: 1.1
+                                        }}>
+                                        {kw.text}
+                                    </div>
+                                );
+                            }) : (
+                                <div className="text-neutral-400 italic text-sm">No keywords discovered yet.</div>
+                            )}
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </>
-                )}
+            )}
 
 
             {/* --- [B] 🌟 양파 분석 모드 (Onion View) --- */}
