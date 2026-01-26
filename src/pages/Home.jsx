@@ -175,7 +175,7 @@ export default function Home() {
                 <RadiatingButton onClick={handleButtonClick} />
             </div>
 
-            <div className="flex justify-center items-center gap-10 absolute bottom-[50pt] w-full h-[300px] mt-10">
+            <div className="flex justify-center items-center gap-10 absolute bottom-[80pt] w-full h-[300px] mt-10">
                 {/* Write 버튼 */}
                 <div className="flex flex-col items-center group">
                     <div onClick={handleWriteClick} className="cursor-pointer hover:scale-110 transition-transform flex w-24 h-24 items-center justify-center rotate-[-28.64deg] bg-[linear-gradient(190deg,_rgba(253,216,42,0.5),_rgba(229,215,111,0.5),_rgba(217,215,145,0.5),_rgba(205,214,179,0.5))] rounded-full shadow-[inset_0px_0px_5px_5px_#FFFBEF,0px_1px_30px_10px_rgba(255,255,255,0.25)] outline outline-[3px] outline-offset-[-3px] outline-white/50 backdrop-blur-[10px]">
