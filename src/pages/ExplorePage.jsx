@@ -811,7 +811,7 @@ export default function ExplorePage() {
 
             {/* [메인 컨텐츠 영역 - 스크롤 가능] */}
             {/* flex-1로 남은 공간 차지, overflow-y-auto로 세로 스크롤 생성 */}
-            <div className="flex-1 h-full overflow-y-auto overflow-x-hidden scrollbar-hide flex flex-col items-center pt-10 pb-20 relative">
+            <div className="flex-1 h-full overflow-y-auto overflow-x-hidden custom-scroll flex flex-col items-center pt-10 pb-20 relative">
                 
                 {/* [사이드 배너 버튼] */}
                 <div 
