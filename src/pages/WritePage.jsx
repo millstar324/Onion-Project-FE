@@ -1139,7 +1139,7 @@ export default function WritePage() {
                                 <button 
                                     key={m}
                                     onClick={() => setSelectedMood(m)}
-                                    className={`p-0.2 rounded-md transition-all ${selectedMood === m ? 'bg-amber-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
+                                    className={`p-0.2 rounded-md transition-all ${selectedMood === m ? 'bg-gray-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
                                 >
                                     <img className="h-9 w-auto" src={`/emotion_new/${m}.png`} alt={m} />
                                 </button>
