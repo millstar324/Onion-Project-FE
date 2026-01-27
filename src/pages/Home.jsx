@@ -146,12 +146,12 @@ export default function Home() {
             )}
 
             {/* 나머지 메인 UI 컨텐츠 */}
-            <div className="text-center text-neutral-900/75 text-5xl font-normal font-['Archivo'] leading-5 pt-[22vh]">
+            <div className="text-center text-neutral-900/75 text-5xl font-normal font-['Archivo'] leading-5 pt-[25vh]">
                 How was your day?
             </div>  
 
             {/* 🌟 수정된 입력창 영역 */}
-            <div className="flex flex-col items-center justify-center pt-[8vh]">
+            <div className="flex flex-col items-center justify-center pt-[6vh]">
                 <div 
                     onClick={handleJournalInputClick}
                     className="cursor-pointer hover:scale-[1.02] transition-all flex flex-col w-[821px] h-20 relative bg-[linear-gradient(150deg,_rgba(238,202,94,0.37),_rgba(241,219,128,0.37),_rgba(252,227,186,0.37),_rgba(242,224,220,0.37))] rounded-full shadow-[inset_0px_0px_30px_8px_#FFFBEF,_0px_1px_30px_10px_rgba(255,255,255,0.25),_inset_10px_10px_29px_0px_rgba(251,165,99,0.10)] backdrop-blur-[10px] inline-flex justify-start items-center gap-48 overflow-hidden"
