@@ -36,6 +36,8 @@ export default function ReportPage() {
     const [progress, setProgress] = useState(0);
     // --- 1. 상태 관리 부분에 추가 ---
     const [big5Scores, setBig5Scores] = useState(null); // 🌟 나무 데이터를 위한 상태 추가
+    const [flower, setFlower] = useState(null);
+    const [serviceDays, setServiceDays] = useState(0);
 
     // 🌟 이미지 참조를 위한 Ref 추가
     const onionRef = useRef(null);
@@ -287,6 +289,12 @@ export default function ReportPage() {
             if (data.big5_scores) {
                 setBig5Scores(data.big5_scores);
             }
+            if (data.mood_stats) {
+                setFlower(data.mood_stats);
+            }
+            if (data.service_days) {
+                setServiceDays(data.service_days);
+            }
 
             if (data.user_tag_counts) {
                 // 태그 필터링 및 변환 로직 동일...
@@ -474,7 +482,7 @@ export default function ReportPage() {
                                 <OrbitControls makeDefault target={[0, 8.5, 0]} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} enableZoom={false} enablePan={false} />
                                 {/* 🌟 big5Scores를 프롭으로 넘겨줍니다. */}
                                 <Suspense fallback={null}>
-                                    {big5Scores && <TreeOnly big5_scores={big5Scores} />}
+                                    {big5Scores && <TreeOnly big5_scores={big5Scores} service_days={serviceDays} mood_stats={flower}/>}
                                 </Suspense>
                                 <ambientLight intensity={0.8} />
                                 <pointLight position={[10, 10, 10]} intensity={1.5} castShadow />
