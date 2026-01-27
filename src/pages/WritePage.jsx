@@ -670,7 +670,6 @@ export default function WritePage() {
     // --- [수정] 일기 저장/업데이트 함수 ---
     // --- [수정] 일기 저장/업데이트 함수 ---
     const handleSave = async (isDraft = false) => {
-        // 에디터 내용 및 유효성 검사 (기존 로직 유지)
         const currentContent = editorRef.current ? editorRef.current.innerHTML : "";
         
         if (!isDraft) {
@@ -693,14 +692,16 @@ export default function WritePage() {
     
         setIsLoading(!isDraft);
     
-        // 날짜 및 시간 생성 (기존 로직 유지)
+        // 날짜 및 시간 설정
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         const localDateString = `${year}-${month}-${day}`;
+        
         const now = new Date();
         const savedTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
     
+        // 🌟 전송할 데이터 꾸러미
         const diaryData = {
             title: title.trim(),
             content: currentContent,
@@ -709,52 +710,49 @@ export default function WritePage() {
             weather: selectedWeather || "sun",
             tags: selectedTags,
             image_url: "",
-            is_temporary: isDraft,
+            is_temporary: isDraft, // 임시저장이면 true, 정식저장이면 false
             entry_time: savedTime,
-            diary_id: editState?.diaryId || null
+            diary_id: editState?.diaryId || null // 🌟 수정 모드일 때만 ID가 포함됨
         };
     
         try {
-            // 🌟 1. 임시저장을 정식저장으로 전환할 때 이전 데이터 삭제
-            if (!isDraft && editState?.isEdit) {
-                await api.delete(`/diaries/${editState.diaryId}`);
-                console.log("이전 임시저장 데이터 삭제 성공");
+            // 🌟 수정된 핵심 로직:
+            // 1. 단순 '임시저장 업데이트'인가? (PATCH)
+            // 2. 아니면 '정식 저장(분석 포함)'인가? (POST)
+            
+            let response;
+            const isUpdatingDraft = isDraft && editState?.isEdit;
+    
+            if (isUpdatingDraft) {
+                // [A] 임시저장 본을 그대로 다시 '임시저장' 할 때 (내용 수정만)
+                response = await api.patch(`/diaries/${editState.diaryId}`, diaryData);
+            } else {
+                // [B] 처음 쓰는 일기 저장 OR 임시저장 본을 '정식 저장'으로 전환할 때
+                // 🌟 명시적 삭제를 하지 않고, diary_id를 payload에 담아 POST로 보냅니다.
+                // 백엔드가 diary_id를 보고 기존 임시저장 데이터를 '덮어쓰기' 할 것입니다.
+                response = await api.post(`/analyze-and-save`, diaryData, {
+                    timeout: 50000 
+                });
             }
     
-            // 🌟 2. URL 및 메서드 설정
-            const isUpdatingDraft = isDraft && editState?.isEdit;
-            const url = isUpdatingDraft 
-                ? `/diaries/${editState.diaryId}` 
-                : `/analyze-and-save`;
-            
-            // 🌟 3. Axios 호출 (분석 요청 시 timeout 50초 부여)
-            await api({
-                method: isUpdatingDraft ? 'PATCH' : 'POST',
-                url: url,
-                data: diaryData,
-                timeout: isDraft ? 10000 : 50000 // 분석 시에는 50초, 단순 저장 시에는 10초
-            });
-    
-            // 🌟 4. 성공 처리 (Axios는 성공 시 바로 여기로 옴)
-            setProgress(100);
-            setTimeout(() => {
-                setIsLoading(false);
-                alert(isDraft ? "임시저장 완료!" : "일기가 성공적으로 분석되고 저장되었습니다! 🧅");
-                navigate('/explore');
-            }, 600);
+            if (response.status === 200 || response.status === 201) {
+                setProgress(100);
+                setTimeout(() => {
+                    setIsLoading(false);
+                    alert(isDraft ? "임시저장이 완료되었습니다." : "일기가 분석되고 성공적으로 저장되었습니다! 🧅");
+                    navigate('/explore');
+                }, 600);
+            }
     
         } catch (err) {
             setIsLoading(false);
-            console.error("저장 실패:", err);
-    
-            // 🌟 5. 에러 대응
-            const errorData = err.response?.data;
-            if (errorData?.detail?.includes("AI Analysis Failed")) {
-                alert("Gemini AI가 일기를 분석하는 데 실패했습니다. 내용을 조금 더 보강해 보세요.");
-            } else if (err.code === 'ECONNABORTED') {
-                alert("분석 시간이 너무 오래 걸려 중단되었습니다. 잠시 후 다시 시도해 주세요.");
+            console.error("저장 실패 상세:", err.response?.data || err.message);
+            
+            const errorDetail = err.response?.data?.detail;
+            if (errorDetail?.includes("AI Analysis Failed")) {
+                alert("AI 분석에 실패했습니다. 내용을 조금 더 구체적으로 적어보세요!");
             } else {
-                alert(`저장 실패: ${errorData?.detail || "서버 연결 오류"}`);
+                alert("저장 중 오류가 발생했습니다. 다시 시도해 주세요.");
             }
         }
     };
@@ -1143,7 +1141,7 @@ export default function WritePage() {
                                     onClick={() => setSelectedMood(m)}
                                     className={`p-0.2 rounded-md transition-all ${selectedMood === m ? 'bg-amber-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
                                 >
-                                    <img className="h-10 w-auto" src={`/emotion/${m}.png`} alt={m} />
+                                    <img className="h-10 w-auto" src={`/emotion_new/${m}.png`} alt={m} />
                                 </button>
                             ))}
                         </div>

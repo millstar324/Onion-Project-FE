@@ -138,7 +138,7 @@ const JournalEntry = ({ data, onDeleteSuccess, isChatActive, onSelect, isSelecte
     
     <div className="flex left-[17px] top-[55px] h-12 absolute justify-between w-full items-center pr-8">
         {['delight', 'happy', 'soso', 'angry', 'sad'].map(mood => (
-            <img key={mood} className={`h-10 w-auto ${data.standard.mood === mood ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/emotion/${mood}.png`} alt={mood} onError={(e) => e.target.style.display='none'} />
+            <img key={mood} className={`h-10 w-auto ${data.standard.mood === mood ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/emotion_new/${mood}.png`} alt={mood} onError={(e) => e.target.style.display='none'} />
         ))}
     </div>
     {/* 📏 가로 경계선: w-[92%] 부분을 수정하여 길이 조절 가능 */}
