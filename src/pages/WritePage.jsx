@@ -1155,7 +1155,7 @@ export default function WritePage() {
                                 <button 
                                     key={w}
                                     onClick={() => setSelectedWeather(w)}
-                                    className={`p-0.3 rounded-md transition-all ${selectedWeather === w ? 'bg-blue-200 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
+                                    className={`p-0.3 rounded-md transition-all ${selectedWeather === w ? 'bg-blue-100 scale-110 shadow-sm' : 'hover:bg-gray-100'}`}
                                 >
                                     <img className="h-8 w-auto" src={`/weather/${w}.png`} alt={w} />
                                 </button>
