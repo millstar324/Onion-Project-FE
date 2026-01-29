@@ -421,7 +421,7 @@ export default function PsychologicalTreeScene() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setError("로그인이 필요한 서비스입니다.");
+      setError("Login required.");
       setLoading(false);
       return;
     }
@@ -443,11 +443,11 @@ export default function PsychologicalTreeScene() {
           setFullData(json); 
 
         } else {
-          throw new Error("나무를 생성할 데이터가 부족합니다.");
+          throw new Error("Data insufficient to create a tree.");
         }
       } catch (err) {
         console.error("Tree Fetch Error:", err);
-        setError(err.response?.data?.detail || err.message || "서버 응답 오류");
+        setError(err.response?.data?.detail || err.message || "Server response error");
       } finally {
         setLoading(false);
       }
@@ -458,14 +458,14 @@ export default function PsychologicalTreeScene() {
 
   if (loading) return (
     <div className="w-full h-screen flex items-center justify-center bg-[#f8f9fa] text-zinc-500 font-bold animate-pulse">
-        당신의 내면 세계를 나무로 생성 중입니다...
+        Growing a tree from your inner world...
     </div>
   );
   
   if (error) return (
     <div className="w-full h-screen flex flex-col items-center justify-center bg-[#f8f9fa] gap-4">
         <div className="text-rose-500 font-bold">⚠️ {error}</div>
-        <button onClick={() => window.location.reload()} className="px-4 py-2 bg-zinc-800 text-white rounded-xl text-sm">다시 시도</button>
+        <button onClick={() => window.location.reload()} className="px-4 py-2 bg-zinc-800 text-white rounded-xl text-sm">Try again</button>
     </div>
   );
 
@@ -493,7 +493,7 @@ export default function PsychologicalTreeScene() {
         <pointLight position={[10, 15, 10]} intensity={1.5} castShadow />
         <directionalLight position={[-10, 20, 5]} intensity={1.2} />
         
-        <Suspense fallback={<Html center>나무 렌더링 중...</Html>}>
+        <Suspense fallback={<Html center>Growing a tree...</Html>}>
           {treeParams && (
             <RecursiveBranch
               start={new THREE.Vector3(0, 0, 0)}

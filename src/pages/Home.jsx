@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import api from '../api/axios';
 import { useEffect } from 'react';
+import Swal from 'sweetalert2';
 
 // [최적화] menuItems를 컴포넌트 외부로 이동하여 리렌더링 방지
 // 아이콘 이름을 HomeIcon 등으로 변경하여 Home 컴포넌트와 충돌 피하기
@@ -46,11 +47,31 @@ export default function Home() {
     }, [isLoggedIn, token]);
 
     // 🌟 로그아웃 함수 추가
-    const handleLogout = () => {
-        if (window.confirm("로그아웃 하시겠습니까?")) {
+    const handleLogout = async () => {
+        const result = await Swal.fire({
+            title: 'Log out of your account?',
+            text: "You can always come back and write your diary! 🌳",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#6D5B98', // ONION 메인 컬러
+            cancelButtonColor: '#aaa',
+            confirmButtonText: 'Log out',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true            // 버튼 위치를 OS 표준에 맞게 조정
+        });
+        
+        if (result.isConfirmed) {
             localStorage.removeItem('token');
             localStorage.removeItem('user_id');
-            alert("로그아웃 되었습니다.");
+            Swal.fire({
+                title: 'Logged out.',
+                text: 'Logged out successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+              });
+
+            
             navigate('/login');
         }
     };
@@ -60,7 +81,14 @@ export default function Home() {
         if (isLoggedIn) {
             navigate('/write');
         } else {
-            alert("로그인이 필요한 서비스입니다.");
+            Swal.fire({
+                title: 'Login required.',
+                text: 'Login required.',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+              });
+            
             navigate('/login');
         }
     };
@@ -161,7 +189,7 @@ export default function Home() {
                         {isLoggedIn ? (
                             <span className="text-neutral-900 font-medium">
                             {/* 🌟 userStats에서 닉네임이 오면 그걸 보여주고, 없으면 user_id 노출 */}
-                            {userStats?.nickname || localStorage.getItem('user_id')}님 안녕하세요.
+                            Hello, {userStats?.nickname || localStorage.getItem('user_id')}.
                         </span>
                         ) : (
                             "Start writing your journal."

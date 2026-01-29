@@ -2,6 +2,7 @@ import TreeScene from '../4_reportpage/TreeScene';
 import { Edit2, TreePine, Search, User, HomeIcon, X, LogOut } from "lucide-react"; // 🌟 LogOut 추가
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
+import Swal from 'sweetalert2';
 
 const menuItems = [
   { name: "Home", path: "/", icon: <HomeIcon size={20} /> },
@@ -17,11 +18,31 @@ export default function FullPage() {
     const [isNavOpen, setIsNavOpen] = useState(false);
 
     // 🌟 로그아웃 함수 (다른 페이지와 동일하게 추가)
-    const handleLogout = () => {
-        if (window.confirm("로그아웃 하시겠습니까?")) {
+    const handleLogout = async () => {
+        const result = await Swal.fire({
+            title: 'Log out?',
+            text: "You can always come back and write your diary! 🌳",
+            icon: 'question',              // 질문형 아이콘
+            showCancelButton: true,
+            confirmButtonColor: '#6D5B98', // ONION 메인 보라색
+            cancelButtonColor: '#aaa',     // 취소는 무채색 계열
+            confirmButtonText: 'Logout',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true           // 버튼 위치 최적화
+          });
+        
+          // 2. 사용자가 '로그아웃'을 눌렀을 때만 처리
+          if (result.isConfirmed) {
             localStorage.removeItem('token');
             localStorage.removeItem('user_id');
-            alert("로그아웃 되었습니다.");
+            Swal.fire({
+                title: 'Logged out.',
+                text: 'Logged out successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+              });
+            
             navigate('/login');
         }
     };

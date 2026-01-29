@@ -7,6 +7,7 @@ import {  TreePine, Search, User, HomeIcon, X, LogOut } from "lucide-react"; // 
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { useRef } from 'react';
+import Swal from 'sweetalert2';
 
 
 const menuItems = [
@@ -191,12 +192,27 @@ export default function ReportPage() {
 
     const handleOnionClick = async () => {
         if (usageCount >= usageLimit) {
-            alert(`이번 달 분석 한도(${usageLimit}회)를 모두 사용하셨습니다.`);
+            Swal.fire({
+                title: 'Warning',
+                text: `You have reached your monthly analysis limit of ${usageLimit}.`,
+                icon: 'warning',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+              });
+            
             return;
         }
         // 0, 1단계일 때만 분석 가능
         if (onionStage >= 2) {
-            alert("이미 모든 분석을 완료했습니다. 껍질을 눌러 리포트를 확인하세요!");
+            Swal.fire({
+                title: 'Analysis complete!',
+                text: 'Analysis complete! Tap a layer to reveal your report.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+              });
+            
+            
             return;
         }
     
@@ -217,8 +233,8 @@ export default function ReportPage() {
                 // 🌟 여기서 미리 fetchData를 한 번 더 호출해두면 창을 닫기 전에도 내부 상태가 준비됩니다.
             }, 600);
         } catch (error) {
-            console.error("분석 실패:", error);
-            alert("분석 중 오류가 발생했습니다.");
+            console.error("Analysis failed:", error);
+            alert("An error occurred during analysis.");
             setIsAnalyzing(false);
             setIsPeeling(false);
         }
@@ -237,11 +253,11 @@ export default function ReportPage() {
                 setLifeMapReport(response.data);
                 setIsModalOpen(true);
             } else {
-                alert("저장된 분석 리포트가 없습니다.");
+                alert("No analysis reports found.");
             }
         } catch (error) {
-            console.error("조회 실패:", error);
-            alert("기록을 불러오지 못했습니다.");
+            console.error("Load failed:", error);
+            alert("Failed to load records.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -250,11 +266,30 @@ export default function ReportPage() {
     
 
     // 🌟 로그아웃 함수 추가
-    const handleLogout = () => {
-        if (window.confirm("로그아웃 하시겠습니까?")) {
+    const handleLogout = async () => {
+        const result = await Swal.fire({
+            title: 'Log out of your account?',
+            text: "You can always come back and write your diary! 🌳",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#6D5B98', // ONION 메인 컬러
+            cancelButtonColor: '#aaa',
+            confirmButtonText: 'Log out',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true            // 버튼 위치를 OS 표준에 맞게 조정
+        });
+        if (result.isConfirmed) {
             localStorage.removeItem('token');
             localStorage.removeItem('user_id');
-            alert("로그아웃 되었습니다.");
+
+            Swal.fire({
+                title: 'Logged out.',
+                text: 'Logged out successfully.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+              });
+            
             navigate('/login');
         }
     };
@@ -319,7 +354,7 @@ export default function ReportPage() {
             }
             // ... 키워드 데이터 처리 동일
         } catch (error) {
-            console.error("로드 실패:", error);
+            console.error("Load failed:", error);
         } finally {
             if (!isSilent) setLoading(false);
         }
@@ -630,7 +665,7 @@ export default function ReportPage() {
                     <div className="text-center mb-4 z-30 pointer-events-none transition-all">
                         <h2 className="text-5xl font-bold text-neutral-800 mb-3 font-['Archivo'] tracking-tight">Deep Core Analysis</h2>
                         <p className="text-neutral-600 text-lg font-['Archivo'] opacity-80">
-                            당신의 내면을 한 꺼풀 더 벗겨보세요. ({usageCount}/{usageLimit})
+                        Peel back another layer of your inner self. ({usageCount}/{usageLimit})
                         </p>
                     </div>
     
@@ -711,7 +746,7 @@ export default function ReportPage() {
                                     <div className="flex-1">
                                         <h3 className="text-xl font-bold text-neutral-800 font-['Archivo']">Analyzing your core...</h3>
                                         <div className="flex justify-between items-center mt-1">
-                                            <span className="text-sm text-neutral-500">Gemini deep dive...</span>
+                                            <span className="text-sm text-neutral-500">Onion deep dive...</span>
                                             <span className="text-emerald-600 font-bold font-mono">{Math.floor(progress)}%</span>
                                         </div>
                                     </div>
@@ -744,7 +779,7 @@ export default function ReportPage() {
                         <div className="font-['Archivo'] text-neutral-800 space-y-12">
                             <div className="text-center">
                                 <h2 className="text-5xl font-bold text-emerald-800 mb-2">Life Map Report</h2>
-                                최종 리포트 생성 날짜 : {formatDate(lifeMapReport.created_at)}
+                                Final report date: {formatDate(lifeMapReport.created_at)}
                             </div>
 
                             <div className="flex flex-wrap justify-center gap-3">
