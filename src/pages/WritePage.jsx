@@ -894,7 +894,7 @@ export default function WritePage() {
                             {/* 2. 🌟 카메라로 바로 찍기 */}
                             <button 
                                 onClick={startWebcam} 
-                                className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
+                                className="w-full py-4 bg-gray-800 hover:bg-gray-900 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-500/30"
                             >
                                 <Search size={20} /> Take a photo
                             </button>
@@ -902,7 +902,7 @@ export default function WritePage() {
                             {/* 3. 갤러리에서 가져오기 */}
                             <button 
                                 onClick={() => scanInputRef.current.click()} 
-                                className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30"
+                                className="w-full py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-gary-500/30"
                             >
                                 <ImageIcon width={20} height={20} /> Import from gallery
                             </button>

@@ -3,10 +3,132 @@
 
 import { useMemo, Suspense, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls, } from '@react-three/drei';
 import * as THREE from 'three';
 import PropTypes from 'prop-types';
 import api from '../api/axios';
+import { useFrame } from '@react-three/fiber';
+import { useRef } from 'react';
+import { Sun, Moon, Sunrise, Sunset } from "lucide-react"; // 아이콘 추가
+
+
+// 🌟 반딧불이 효과 컴포넌트
+const Fireflies = ({ count = 40, glowInt }) => {
+  const meshRef = useRef();
+  
+  // 반딧불이들의 초기 위치와 고유 속도 등을 생성
+  const particles = useMemo(() => {
+    const temp = [];
+    for (let i = 0; i < count; i++) {
+      temp.push({
+        x: (Math.random() - 0.5) * 25, // 가로 범위
+        y: Math.random() * 15,         // 초기 높이
+        z: (Math.random() - 0.5) * 25, // 세로 범위
+        speed: 0.005 + Math.random() * 0.015, // 상승 속도
+        offset: Math.random() * Math.PI * 2, // 흔들림 시작점
+      });
+    }
+    return temp;
+  }, [count]);
+
+  // 애니메이션 로직
+  const dummy = new THREE.Object3D();
+  useFrame((state) => {
+    if (!meshRef.current) return;
+    const time = state.clock.getElapsedTime();
+
+    particles.forEach((p, i) => {
+      // 1. 위로 상승
+      p.y += p.speed;
+      // 일정 높이 이상 올라가면 다시 바닥으로 (무한 루프)
+      if (p.y > 15) p.y = 0;
+
+      // 2. 좌우 흔들림 (몽글몽글한 움직임)
+      const x = p.x + Math.sin(time + p.offset) * 0.5;
+      const z = p.z + Math.cos(time + p.offset) * 0.5;
+
+      dummy.position.set(x, p.y, z);
+      
+      // 3. 밤이 깊어질수록 크기도 살짝 변함 (깜빡임 효과) -size *0.08 * Math~
+      const scale = (Math.sin(time * 2 + p.offset) + 1.2) * 0.06 * Math.min(glowInt, 1);
+      dummy.scale.set(scale, scale, scale);
+      
+      dummy.updateMatrix();
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    });
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    // 성능을 위해 InstancedMesh 사용
+    <instancedMesh ref={meshRef} args={[null, null, count]}>
+      <sphereGeometry args={[1, 8, 8]} />
+      <meshStandardMaterial 
+        color="#ffff88" 
+        emissive="#ffff44" 
+        emissiveIntensity={glowInt * 5} // 🌟 밤에만 밝게 빛남
+        transparent
+        opacity={Math.min(glowInt, 0.8)} // 🌟 밤에만 서서히 나타남
+      />
+    </instancedMesh>
+  );
+};
+
+Fireflies.propTypes = {
+  count: PropTypes.number,
+  glowInt: PropTypes.number,
+};
+
+// ----------------------------------------------------------------------
+// 🌟 [핵심] 시간대별 키프레임 정의 (색상과 밝기의 기준점)
+// pos: 슬라이더 위치 (0~100)
+// top/bottom: 배경 그라데이션 색상
+// ambient: 전체 밝기 / sun: 태양광 세기
+// glow: 야광 강도 (0: 없음, 높을수록 밝음)
+// ----------------------------------------------------------------------
+const TIME_CYCLES = [
+  { pos: 0,   top: "#020024", bottom: "#090979", ambient: 0.1, sun: 0.0, glow: 1.5 }, // 깊은 밤 (야광 최대)
+  { pos: 20,  top: "#2c3e50", bottom: "#bdc3c7", ambient: 0.3, sun: 0.3, glow: 0.8 }, // 새벽 (야광 약함)
+  { pos: 40,  top: "#ff7e5f", bottom: "#feb47b", ambient: 0.5, sun: 0.8, glow: 0.4 }, // 일출 (야광 꺼짐)
+  { pos: 50,  top: "#2980b9", bottom: "#6dd5fa", ambient: 0.7, sun: 1.2, glow: 0.1 }, // 정오 (가장 밝음)
+  { pos: 70,  top: "#2c3e50", bottom: "#fd746c", ambient: 0.5, sun: 0.8, glow: 0.4 }, // 일몰 (야광 꺼짐)
+  { pos: 85,  top: "#141e30", bottom: "#243b55", ambient: 0.2, sun: 0.2, glow: 0.8 }, // 초저녁 (야광 켜짐)
+  { pos: 100, top: "#020024", bottom: "#090979", ambient: 0.1, sun: 0.0, glow: 1.5 }  // 깊은 밤
+];
+
+
+// --- 색상 및 수치 보간 함수 ---
+const getInterpolatedParams = (currentPos) => {
+  // 1. 현재 슬라이더 값(currentPos)이 어느 구간(start ~ end)에 있는지 찾기
+  let startNode = TIME_CYCLES[0];
+  let endNode = TIME_CYCLES[TIME_CYCLES.length - 1];
+
+  for (let i = 0; i < TIME_CYCLES.length - 1; i++) {
+    if (currentPos >= TIME_CYCLES[i].pos && currentPos <= TIME_CYCLES[i+1].pos) {
+      startNode = TIME_CYCLES[i];
+      endNode = TIME_CYCLES[i+1];
+      break;
+    }
+  }
+
+  // 2. 구간 내에서의 진행률(ratio) 계산 (0.0 ~ 1.0)
+  const range = endNode.pos - startNode.pos;
+  const ratio = range === 0 ? 0 : (currentPos - startNode.pos) / range;
+
+  // 3. 색상 보간 (THREE.Color의 lerp 사용)
+  const topColor = new THREE.Color(startNode.top).lerp(new THREE.Color(endNode.top), ratio);
+  const bottomColor = new THREE.Color(startNode.bottom).lerp(new THREE.Color(endNode.bottom), ratio);
+
+  // 4. 수치 보간 (단순 수학 공식)
+  const ambientInt = startNode.ambient + (endNode.ambient - startNode.ambient) * ratio;
+  const sunInt = startNode.sun + (endNode.sun - startNode.sun) * ratio;
+  const glowInt = startNode.glow + (endNode.glow - startNode.glow) * ratio;
+
+  // 5. 배경 CSS 문자열 생성
+  const bgGradient = `linear-gradient(to bottom, #${topColor.getHexString()}, #${bottomColor.getHexString()})`;
+
+  return { bgGradient, ambientInt, sunInt, glowInt, sunColor: bottomColor.getStyle() };
+};
 
 
 const NaturalHill = ({ color = "#eeeeee", height = 1.5, spread = 15 }) => {
@@ -66,11 +188,9 @@ NaturalHill.propTypes = {
 
 const darkenColor = (colorStart, factor) => {
   const c = new THREE.Color(colorStart);
-  const black = new THREE.Color("#000000");
-  
+  const black = new THREE.Color("#000000")
   // HSL이 아닌 일반 lerp(RGB)를 사용하면 색상 변이 없이 어두워지기만 합니다.
-  c.lerp(black, Math.max(0, Math.min(0.4, factor))); 
-  
+  c.lerp(black, Math.max(0, Math.min(0.2, factor)));
   return c.getStyle(); 
 };
 
@@ -118,15 +238,21 @@ const xmur3 = (str) => {
 
 // --- 텍스처 로더 ---
 const textureLoader = new THREE.TextureLoader();
+
+// getBarkMaterial 함수 수정
 const getBarkMaterial = (color) => {
   const tex = textureLoader.load('/세미그레이줄기texture.jpg');
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(1, 2);
+
   return new THREE.MeshStandardMaterial({
     color: color,
     map: tex,
-    roughness: 0.9,
-    side: THREE.DoubleSide
+    roughness: 0.8, // 0.9에서 0.8로 살짝 낮춰 빛을 더 잘 받게 함
+    side: THREE.DoubleSide,
+    // 🌟 [추가] 줄기 색상을 기반으로 미세하게 빛을 내게 하여 암부 디테일 살림
+    emissive: color,
+    emissiveIntensity: 0.15 // 0.1~0.2 사이 권장
   });
 };
 
@@ -222,41 +348,37 @@ const mapBig5ToTree = (stats, userId, serviceDays = 1, fullStats = null) => {
     flowerStage,  // 🌟 이제 1, 2, 3, 4 단계가 전달됩니다.
     totalDiaries, 
     branchSpread: mapStat(stats.openness?.adventurousness, 0.4, 0.9),
-    complexity: (stats.openness?.intellect || 5) > 6 ? 3 : 2,
+    complexity: (stats.openness?.intellect || 5) > 6 ? 4 : 3,
     irregularity: mapStat(10 - (stats.conscientiousness?.orderliness || 5), 0.1, 1.2),
     leafDensity: Math.floor(mapStat(stats.extraversion?.gregariousness, 8, 25)),
     treeScale: mapStat(stats.extraversion?.activity_level, 3.5, 5.0) * growthFactor,
     leafColor: lerpColor("#5F8B5F", "#77dd77", sympathyFactor),
     leafVitalityFactor: trustFactor, // 0.0 ~ 1.0
     barkNoise: mapStat(stats.neuroticism?.anxiety, 0.1, 1.5),
-    trunkColor: lerpColor("#8D6E63", "#3E2723", depressionFactor),
+    trunkColor: lerpColor("#A1887F", "#5D4037", depressionFactor),
     flowerColor: lerpColor("#FFF9C4", "#FFB7C5", selfDisciplineFactor),
     vulnerabilityFactor: vulnerabilityFactor,
     selfConsciousnessFactor: selfConsciousnessFactor,
   };
 };
+
+
 const FlowerCluster = ({ curve, radius, params }) => {
   const flowerSize = 0.22;
   const MIN_DIST = flowerSize * 2.1; 
 
   const flowers = useMemo(() => {
-    if (params.flowerStage <= 1) return []; // 1단계: 꽃 없음
+    if (params.flowerStage <= 1) return [];
     
     const arr = [];
     const maxAttempts = 50; 
-    // 일기 2개당 꽃 1개 생성 (최대 15개)
-    // 🌟 기존 targetCount에 밀도 계수(flowerDensityFactor)를 곱합니다.
     const baseTarget = Math.min(Math.floor(params.totalDiaries / 2), 15);
     const targetCount = Math.floor(baseTarget * (params.flowerDensityFactor || 1));
-  
-    // 🌟 중간 가지에도 꽃이 '최소 한 개'는 보일 수 있게 확률적 보정
-    const finalTarget = (targetCount === 0 && params.flowerDensityFactor > 0 && params.rng() > 0.7) 
-      ? 1 : targetCount;
+    const finalTarget = (targetCount === 0 && params.flowerDensityFactor > 0 && params.rng() > 0.7) ? 1 : targetCount;
   
     for (let i = 0; i < maxAttempts; i++) {
       if (arr.length >= finalTarget) break;
   
-      // 잎보다는 조금 더 끝 쪽에 피게 t 범위 조정 (0.4 ~ 1.0)
       const t = 0.4 + params.rng() * 0.6;
       const pos = curve.getPointAt(t);
       const tangent = curve.getTangentAt(t).normalize();
@@ -281,18 +403,14 @@ const FlowerCluster = ({ curve, radius, params }) => {
         dummy.position.copy(finalPos);
         dummy.lookAt(finalPos.clone().add(surfaceDir));
         
-        // 🌟 [핵심 수정: 확정적 개화 로직]
-        // 1. i(꽃의 인덱스)를 기준으로 개화를 결정하여 RNG 간섭을 차단합니다.
-        // 2. 단계 3에서는 일기 개수가 늘어날수록 i가 낮은(먼저 생긴) 꽃부터 차례대로 만개합니다.
         let isFullBloom = false;
         if (params.flowerStage === 2) {
-          isFullBloom = false; // 모두 봉오리
+          isFullBloom = false; 
         } else if (params.flowerStage === 3) {
-          // 일기 20개면 0개 만개, 40개면 모두 만개하도록 순차 적용
           const bloomCount = Math.floor(params.totalDiaries - 20); 
           isFullBloom = arr.length < bloomCount; 
         } else if (params.flowerStage === 4) {
-          isFullBloom = true;  // 모두 만개
+          isFullBloom = true; 
         }
 
         arr.push({ 
@@ -325,67 +443,27 @@ const FlowerCluster = ({ curve, radius, params }) => {
 
   return (
     <group>
-      {flowers.map((f) => {
-        // 🌟 [겹꽃 로직 핵심]
-        // 1. 레이어 수 결정: 자의식이 높을수록 1층에서 최대 3층까지 쌓임
+      {flowers.map((f, i) => {
         const layerCount = f.isFullBloom ? Math.floor(1 + params.selfConsciousnessFactor * 2.5) : 1;
-        
-        // 2. 기본 꽃잎 수: 만개 시 6~8개 베이스
         const petalsPerLayer = f.isFullBloom ? 6 : 5;
 
+        // 🌟 AnimatedFlower 호출
         return (
-          <group key={f.id} position={f.pos} rotation={f.rotation}>
-            {/* 레이어 반복 생성 */}
-            {[...Array(layerCount)].map((_, layerIdx) => {
-                const layerScale = 1 - layerIdx * 0.2;
-                const layerTilt = f.isFullBloom ? (0.1 + layerIdx * 0.2) : 1.3;
-                
-                // 🌟 [수정] lerpColor 대신 darkenColor를 사용하여 보랏빛 유지
-                const shadowIntensity = layerIdx * 0.25; // 0.25로 조금 더 진하게 조절해봤습니다.
-                const layerColor = layerIdx === 0 
-                  ? params.flowerColor 
-                  : darkenColor(params.flowerColor, shadowIntensity);
-              
-                return (
-                  <group key={layerIdx} scale={layerScale}>
-                    {[...Array(petalsPerLayer)].map((__, pIdx) => {
-                    const angleOffset = (Math.PI * 2 / petalsPerLayer) * (layerIdx * 0.5);
-                    const rotationY = (Math.PI * 2 / petalsPerLayer) * pIdx + angleOffset;
-        
-                    return (
-                      <group key={pIdx} rotation={[0, 0, rotationY]}>
-                        <mesh geometry={petalGeo} rotation={[layerTilt, 0, 0]}>
-                          <meshStandardMaterial 
-                            color={layerColor} 
-                            side={THREE.DoubleSide} 
-                            emissive={layerColor} 
-                            emissiveIntensity={0.2} // 그림자 층은 발광을 낮춰야 더 깊이감 있음
-                          />
-                        </mesh>
-                      </group>
-                    );
-                  })}
-                </group>
-              );
-            })}
-            
-            {/* 수술 레이어: scale을 통해 봉오리 상태일 땐 거의 소멸 상태로 만듦 */}
-            <group scale={f.isFullBloom ? 1.2 : 0.8} position={[0, 0, 0.01 * layerCount]}>
-              {[...Array(f.isFullBloom ? 5 : 2)].map((_, k, arr) => (
-                <group key={k} rotation={[0, 0, (Math.PI * 2 / arr.length) * k]}>
-                  <group rotation={[ (f.isFullBloom ? 0.4 : 0.1) + Math.PI / 2, 0, 0]}>
-                    <mesh geometry={stamenGeo}>
-                      <meshStandardMaterial color="#FFD700" emissive="#FFD700" emissiveIntensity={0.8} />
-                    </mesh>
-                    <mesh position={[0, 0.16, 0]}>
-                      <sphereGeometry args={[0.015, 6, 6]} />
-                      <meshStandardMaterial color="#FFA500" emissive="#FFA500" />
-                    </mesh>
-                  </group>
-                </group>
-              ))}
-            </group>
-          </group>
+          <AnimatedFlower
+            key={f.id}
+            index={i}
+            pos={f.pos}
+            rotation={f.rotation}
+            isFullBloom={f.isFullBloom}
+            layerCount={layerCount}
+            petalsPerLayer={petalsPerLayer}
+            petalGeo={petalGeo}
+            stamenGeo={stamenGeo}
+            flowerColor={params.flowerColor}
+            isWindy={params.isWindy} // isWindy 전달
+            isNight={params.isNight}
+            glowInt={params.glowInt}
+          />
         );
       })}
     </group>
@@ -401,7 +479,10 @@ FlowerCluster.propTypes = {
     flowerColor: PropTypes.string.isRequired,
     flowerDensityFactor: PropTypes.number,
     selfConsciousnessFactor: PropTypes.number,
-  }).isRequired
+    isWindy: PropTypes.bool.isRequired,
+    isNight: PropTypes.bool.isRequired,
+    glowInt: PropTypes.number.isRequired,
+  }).isRequired,
 };
 
 // --- 수정된 RecursiveBranch ---
@@ -492,8 +573,140 @@ RecursiveBranch.propTypes = {
   params: PropTypes.object.isRequired
 };
 
+// 🌟 1. AnimatedLeaf (야광 강도를 glowInt로 받아서 부드럽게 처리)
+const AnimatedLeaf = ({ pos, rotation, geometry, color, isWindy, glowInt, index }) => {
+  const meshRef = useRef();
+  
+  useFrame((state) => {
+    if (!meshRef.current) return;
+    const time = state.clock.getElapsedTime();
+    const offset = index * 0.1; 
+    
+    const windX = isWindy ? Math.sin(time * 2 + offset) * 0.2 : 0;
+    const windY = isWindy ? Math.cos(time * 1.5 + offset) * 0.1 : 0;
+
+    meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, rotation[0] + windX, 0.1);
+    meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, rotation[1] + windY, 0.1);
+    meshRef.current.rotation.z = rotation[2]; 
+  });
+
+  return (
+    <mesh ref={meshRef} position={pos} rotation={rotation} geometry={geometry} castShadow>
+      <meshStandardMaterial 
+        color={color} 
+        side={THREE.DoubleSide} 
+        transparent 
+        opacity={0.9} 
+        roughness={0.8}
+        // 🌟 핵심: glowInt 값에 따라 서서히 밝아짐
+        emissive={color}
+        emissiveIntensity={glowInt * 0.5} // 잎은 은은하게
+      />
+    </mesh>
+  );
+};
+
+
+AnimatedLeaf.propTypes = {
+  pos: PropTypes.instanceOf(THREE.Vector3).isRequired,
+  rotation: PropTypes.instanceOf(THREE.Vector3).isRequired,
+  geometry: PropTypes.instanceOf(THREE.BufferGeometry).isRequired,
+  color: PropTypes.string.isRequired,
+  isWindy: PropTypes.bool.isRequired,
+  glowInt: PropTypes.number.isRequired,
+  isNight: PropTypes.bool.isRequired,
+  index: PropTypes.number.isRequired,
+};
+
+// 🌟 2. AnimatedFlower (꽃은 더 밝게 야광)
+const AnimatedFlower = ({ pos, rotation, isFullBloom, layerCount, petalsPerLayer, petalGeo, stamenGeo, flowerColor, isWindy, glowInt, index }) => {
+  const groupRef = useRef();
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    const time = state.clock.getElapsedTime();
+    const offset = index * 0.2;
+    
+    if (isWindy) {
+      groupRef.current.rotation.x = rotation[0] + Math.sin(time * 2 + offset) * 0.1;
+      groupRef.current.rotation.z = rotation[2] + Math.cos(time * 1.5 + offset) * 0.1;
+    } else {
+      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, rotation[0], 0.1);
+      groupRef.current.rotation.z = THREE.MathUtils.lerp(groupRef.current.rotation.z, rotation[2], 0.1);
+    }
+  });
+
+  return (
+    <group ref={groupRef} position={pos} rotation={rotation}>
+      {[...Array(layerCount)].map((_, layerIdx) => {
+        const layerScale = 1 - layerIdx * 0.2;
+        const layerTilt = isFullBloom ? (0.1 + layerIdx * 0.2) : 1.3;
+        const shadowIntensity = layerIdx * 0.3;
+        const layerColor = layerIdx === 0 ? flowerColor : darkenColor(flowerColor, shadowIntensity);
+
+        return (
+          <group key={layerIdx} scale={layerScale}>
+            {[...Array(petalsPerLayer)].map((__, pIdx) => {
+              const rotationY = (Math.PI * 2 / petalsPerLayer) * pIdx + (Math.PI * 2 / petalsPerLayer) * (layerIdx * 0.5);
+              return (
+                <group key={pIdx} rotation={[0, 0, rotationY]}>
+                  <mesh geometry={petalGeo} rotation={[layerTilt, 0, 0]} castShadow receiveShadow={false}>
+                    <meshStandardMaterial 
+                      color={layerColor} 
+                      side={THREE.DoubleSide} 
+                      roughness={1.0} 
+                      metalness={0.0}
+                      emissive={layerColor} 
+                      // 🌟 밤이 깊어질수록(glowInt 증가) 더 밝게 빛남
+                      // 안쪽 잎(layerIdx)은 조금 덜 빛나게 하여 입체감 유지
+                      emissiveIntensity={glowInt * (1.2 - layerIdx * 0.2)} 
+                    />
+                  </mesh>
+                </group>
+              );
+            })}
+          </group>
+        );
+      })}
+      
+      {/* 수술 부분 (가장 밝게) */}
+      <group scale={isFullBloom ? 1.2 : 0.8} position={[0, 0, 0.01 * layerCount]}>
+        {[...Array(isFullBloom ? 5 : 2)].map((_, k, arr) => (
+          <group key={k} rotation={[0, 0, (Math.PI * 2 / arr.length) * k]}>
+            <group rotation={[ (isFullBloom ? 0.4 : 0.1) + Math.PI / 2, 0, 0]}>
+              <mesh geometry={stamenGeo} castShadow receiveShadow={false}>
+                <meshStandardMaterial color="#FFD700" emissive="#FFD700" emissiveIntensity={glowInt * 2.0} roughness={1} />
+              </mesh>
+              <mesh position={[0, 0.16, 0]}>
+                <sphereGeometry args={[0.015, 6, 6]} />
+                <meshStandardMaterial color="#FFA500" emissive="#FFA500" emissiveIntensity={glowInt * 2.0} roughness={1} />
+              </mesh>
+            </group>
+          </group>
+        ))}
+      </group>
+    </group>
+  );
+};
+
+AnimatedFlower.propTypes = {
+  pos: PropTypes.instanceOf(THREE.Vector3).isRequired,
+  rotation: PropTypes.instanceOf(THREE.Vector3).isRequired,
+  isFullBloom: PropTypes.bool.isRequired,
+  layerCount: PropTypes.number.isRequired,
+  petalsPerLayer: PropTypes.number.isRequired,
+  petalGeo: PropTypes.instanceOf(THREE.BufferGeometry).isRequired,
+  stamenGeo: PropTypes.instanceOf(THREE.BufferGeometry).isRequired,
+  flowerColor: PropTypes.string.isRequired,
+  isWindy: PropTypes.bool.isRequired,
+  glowInt: PropTypes.number.isRequired,
+  isNight: PropTypes.bool.isRequired,
+  index: PropTypes.number.isRequired,
+};
+
 // --- 나뭇잎도 꿰뚫리지 않게 수정 ---
 const LeafCluster = ({ curve, radius, params }) => {
+  
   const leaves = useMemo(() => {
     const arr = [];
     const dummy = new THREE.Object3D(); // 회전 계산용 임시 객체
@@ -543,6 +756,9 @@ const LeafCluster = ({ curve, radius, params }) => {
     return arr;
   }, [curve, radius, params]);
 
+
+  
+
   const leafGeo = useMemo(() => {
     const baseSize = 0.4 + (params.vulnerabilityFactor * 0.8); 
     const maxWidth = baseSize * (0.2 + params.leafVitalityFactor * 0.6); 
@@ -561,19 +777,23 @@ const LeafCluster = ({ curve, radius, params }) => {
   return (
     <group>
       {leaves.map((leaf, i) => (
-        <mesh key={i} position={leaf.pos} rotation={leaf.rotation} geometry={leafGeo} castShadow>
-          <meshStandardMaterial 
-            color={params.leafColor} 
-            side={THREE.DoubleSide} 
-            transparent 
-            opacity={0.9} 
-            roughness={0.8}
-          />
-        </mesh>
+        // 🌟 map 안에서 AnimatedLeaf 컴포넌트 호출
+        <AnimatedLeaf 
+          key={i}
+          index={i}
+          pos={leaf.pos}
+          rotation={leaf.rotation}
+          geometry={leafGeo}
+          color={params.leafColor}
+          isWindy={params.isWindy} // isWindy 전달
+          isNight={params.isNight}
+          glowInt={params.glowInt}
+        />
       ))}
     </group>
   );
 };
+
 
 // 중복되었던 PropTypes를 깔끔하게 하나로 정리했습니다.
 LeafCluster.propTypes = {
@@ -585,16 +805,22 @@ LeafCluster.propTypes = {
     leafVitalityFactor: PropTypes.number.isRequired,
     vulnerabilityFactor: PropTypes.number.isRequired,
     leafColor: PropTypes.string.isRequired,
+    isWindy: PropTypes.bool.isRequired,
+    isNight: PropTypes.bool.isRequired,
+    glowInt: PropTypes.number.isRequired,
   }).isRequired
 };
 
 // --- 메인 페이지 컴포넌트 (API 연동) ---
 
-export default function PsychologicalTreeScene() {
+export default function PsychologicalTreeScene({ isWindy }) {
   const [treeData, setTreeData] = useState({ stats: null, days: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [fullData, setFullData] = useState(null); // 🌟 전체 데이터를 담을 상태
+
+  // 🌟 시간 상태 (0~100)
+  const [timeValue, setTimeValue] = useState(50); // 기본값: 낮(30)
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -637,6 +863,8 @@ export default function PsychologicalTreeScene() {
     fetchStats();
   }, []);
 
+  
+
   if (loading) return (
     <div className="w-full h-screen flex items-center justify-center bg-[#f8f9fa] text-zinc-500 font-bold animate-pulse">
         Growing a tree from your inner world...
@@ -650,30 +878,82 @@ export default function PsychologicalTreeScene() {
     </div>
   );
 
-  // 🌟 [핵심 수정] mapBig5ToTree에 이용 일수와 전체 데이터를 함께 전달합니다.
+  // 🌟 슬라이더 값에 따라 모든 환경 변수를 부드럽게 계산
+  const { bgGradient, ambientInt, sunInt, glowInt, sunColor } = getInterpolatedParams(timeValue);
+
   const userId = localStorage.getItem('user_id') || 'guest';
   const treeParams = mapBig5ToTree(treeData.stats, userId, treeData.days, fullData);
-
-  // 성장에 따른 동적 수치 계산 (Depth는 이용 일수에 따라 2~4단계)
-  const dynamicDepth = treeData.days <= 10 ? 2 : treeData.days <= 30 ? 3 : 4;
   
-  // 나무의 밑동 두께 (로그 함수로 안정적으로 성장)
+  // 🌟 params에 환경 정보 추가
+  const animatedParams = { 
+    ...treeParams, 
+    isWindy,
+    glowInt // 잎과 꽃에 전달될 야광 플래그
+  };
+
+  const dynamicDepth = treeData.days <= 10 ? 2 : treeData.days <= 30 ? 3 : 4;
   const dynamicRadius = 0.8 + (Math.log10(treeData.days + 1) * 0.2);
 
+  if (loading) return <div className="w-full h-screen bg-[#f8f9fa]" />;
+
+
+
+
+
   return (
-    <div style={{ width: "100vw", height: "100vh", background: "#f8f9fa" }}>
-      <Canvas shadows camera={{ position: [0, 10, 25], fov: 45 }}>
-        <OrbitControls 
-          makeDefault 
-          target={[0, treeParams.treeScale * 1.2, 0]} 
-          minDistance={5} 
-          maxDistance={60} 
-        />
-        <ambientLight intensity={0.7} />
-        <pointLight position={[10, 15, 10]} intensity={1.5} castShadow />
-        <directionalLight position={[-10, 20, 5]} intensity={1.2} />
+    // 🌟 배경 그라데이션 적용 (transition으로 부드럽게)
+    <div style={{ width: "100vw", height: "100vh", background: bgGradient }}>
+      
+      {/* 🌟 시간 조절 슬라이더 UI */}
+      <div className="absolute top-10 left-10 z-50 bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20 flex flex-col gap-3 w-72 shadow-2xl animate-in slide-in-from-top-5 duration-700">
+        <div className="flex justify-between text-white font-bold px-1">
+            <Moon size={18} className="opacity-70"/>
+            <Sunrise size={18} className="opacity-70"/>
+            <Sun size={20} className="text-yellow-300"/>
+            <Sunset size={18} className="opacity-70"/>
+            <Moon size={18} className="opacity-70"/>
+        </div>
         
-        <Suspense fallback={<Html center>Growing a tree...</Html>}>
+        {/* 커스텀 슬라이더 스타일 */}
+        <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            step="0.5" // 🌟 부드러운 이동을 위해 소수점 스텝 추가
+            value={timeValue} 
+            onChange={(e) => setTimeValue(Number(e.target.value))}
+            className="w-full h-2 bg-gradient-to-r from-indigo-900 via-sky-400 to-indigo-900 rounded-lg appearance-none cursor-pointer"
+        />
+        
+        <div className="flex justify-between text-[10px] text-white/60 font-mono px-1">
+            <span>00:00</span>
+            <span>06:00</span>
+            <span>12:00</span>
+            <span>18:00</span>
+            <span>24:00</span>
+        </div>
+      </div>
+
+      <Canvas shadows camera={{ position: [0, 10, 25], fov: 45 }}>
+        <OrbitControls makeDefault target={[0, treeParams.treeScale * 1.2, 0]} minDistance={5} maxDistance={60} />
+        
+        {/* 🌟 계산된 조명 값 적용 */}
+        <ambientLight intensity={ambientInt} />
+        <directionalLight 
+            position={[10, 20, 10]} 
+            intensity={sunInt} 
+            color={sunColor}
+            castShadow 
+            shadow-bias={-0.0001}
+            shadow-mapSize={[2048, 2048]}
+        />
+        
+        {/* 밤이 깊을 때(glowInt가 높을 때)만 켜지는 달빛 포인트 조명 */}
+        {glowInt > 0.5 && (
+            <pointLight position={[-15, 10, -5]} intensity={glowInt * 0.5} color="#6666ff" distance={50} />
+        )}
+
+        <Suspense fallback={null}>
           {treeParams && (
             <RecursiveBranch
               start={new THREE.Vector3(0, 0, 0)}
@@ -681,23 +961,26 @@ export default function PsychologicalTreeScene() {
               length={treeParams.treeScale}
               radius={dynamicRadius}
               depth={dynamicDepth}
-              params={treeParams}
+              params={animatedParams} // glowInt 포함됨
             />
           )}
+
+          <Fireflies count={50} glowInt={glowInt} />
+          {/* 언덕 색상은 조명에 맡기거나, 밤에는 약간 어두운 톤으로 보정 */}
+          <NaturalHill 
+            color={glowInt > 0.5 ? "#2c3e50" : "#e2c6ab"} 
+            height={1.8} 
+            spread={20} 
+          />
         </Suspense>
-
-        {/* 🌟 [수정된 부분] 입체감이 있는 언덕 형태의 땅 */}
-        {/* 🌟 새로운 자연스러운 언덕 적용 */}
-        <NaturalHill 
-          color="#e2c6ab" 
-          height={1.8}  // 솟아오르는 높이
-          spread={2}   // 퍼지는 범위 (이 값이 클수록 완만한 평원이 됩니다)
-        />
-
       </Canvas>
     </div>
   );
 }
+
+PsychologicalTreeScene.propTypes = {
+  isWindy: PropTypes.bool.isRequired,
+};
 
 // --- ReportPage용 컴포넌트 ---// --- ReportPage용 컴포넌트 (성장 + 개화 로직 통합 버전) ---
 export function TreeOnly({ big5_scores, service_days = 1, mood_stats = null }) {
@@ -705,11 +988,18 @@ export function TreeOnly({ big5_scores, service_days = 1, mood_stats = null }) {
   
   if (!big5_scores) return null;
 
-  // 🌟 1. 전체 일기 데이터를 포함하여 파라미터 계산 (꽃 정보 포함)
-  // mapBig5ToTree가 4번째 인자로 { mood_stats } 형태를 받도록 설계되었습니다.
+  // 1. 기본 파라미터 계산
   const treeParams = mapBig5ToTree(big5_scores, userId, service_days, { mood_stats });
 
-  // 🌟 2. 성장에 따른 동적 수치 (메인 씬과 동일하게 유지)
+  // 🌟 [핵심 수정] 리포트 페이지용 고정 파라미터 설정
+  // 바람은 불지 않고(false), 야광은 끄되(0), 아주 약간의 생기(0.2)만 부여합니다.
+  const reportParams = { 
+    ...treeParams, 
+    isWindy: false, 
+    isNight: false, 
+    glowInt: 0.2 // 리포트에서 색감이 화사하게 살아나도록 살짝만 부여
+  };
+
   const dynamicDepth = service_days <= 10 ? 2 : service_days <= 30 ? 3 : 4;
   const dynamicRadius = 0.8 + (Math.log10(service_days + 1) * 0.2);
 
@@ -722,32 +1012,29 @@ export function TreeOnly({ big5_scores, service_days = 1, mood_stats = null }) {
           length={treeParams.treeScale} 
           radius={dynamicRadius}       
           depth={dynamicDepth}         
-          params={treeParams}          // 👈 여기에 flowerStage, flowerColor가 들어있음
+          params={reportParams} // 👈 수정된 파라미터 전달
         />
       )}
-      {/* 🌟 1. 환경광 낮추기: 0.8 -> 0.3으로 낮춰야 그림자가 선명해집니다. */}
-      <ambientLight intensity={0.3} />
+
+      {/* 🌟 조명 보정: 리포트 페이지이므로 그림자보다는 색감이 잘 보이게 밝게 설정 */}
+      <ambientLight intensity={0.8} /> {/* 0.3 -> 0.8로 상향 */}
       
-      {/* 🌟 2. 직사광선 추가: 특정 각도에서 빛이 들어와야 언덕의 경사면에 음영이 생깁니다. */}
       <directionalLight
-        position={[15, 25, 10]} // 👈 우측 상단에서 비춤
+        position={[10, 20, 10]} 
         castShadow
-        intensity={1.2}
+        intensity={1.0} // 1.2 -> 1.0 (너무 타지 않게 조절)
         shadow-bias={-0.0001}
-        shadow-mapSize={[2048, 2048]}
-      >
-      </directionalLight>
-      {/* 포인트 조명은 보조광으로 유지 */}
-      <pointLight position={[-10, 10, -10]} intensity={0.5} />
+      />
+
+      {/* 반대편 보조광 추가 (어두운 면 제거) */}
+      <pointLight position={[-10, 5, -10]} intensity={0.5} color="#ffffff" />
       
       <NaturalHill 
         color="#e2c6ab" 
         height={1.8} 
-        spread={15} // 👈 spread가 2면 너무 뾰족할 수 있습니다. 15~20 정도를 추천해요.
+        spread={20} 
       />
     </Suspense>
-
-    
   );
 }
 

@@ -1,4 +1,4 @@
-import inputLogo from '../1_homepage/입력창로고.png';
+/* eslint-disable */
 import { Edit2, TreePine, Search, User, HomeIcon, X, LogOut } from "lucide-react"; // 아이콘 일괄 임포트
 import RadiatingButton from '../components/RadiatingButton';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -179,23 +179,65 @@ export default function Home() {
             </div>  
 
             {/* 🌟 수정된 입력창 영역 */}
+            {/* 🌟 임팩트 있는 스타일의 입력창 영역 */}
             <div className="flex flex-col items-center justify-center pt-[6vh]">
-                <div 
-                    onClick={handleJournalInputClick}
-                    className="cursor-pointer hover:scale-[1.02] transition-all flex flex-col w-[821px] h-20 relative bg-[linear-gradient(150deg,_rgba(238,202,94,0.37),_rgba(241,219,128,0.37),_rgba(252,227,186,0.37),_rgba(242,224,220,0.37))] rounded-full shadow-[inset_0px_0px_30px_8px_#FFFBEF,_0px_1px_30px_10px_rgba(255,255,255,0.25),_inset_10px_10px_29px_0px_rgba(251,165,99,0.10)] backdrop-blur-[10px] inline-flex justify-start items-center gap-48 overflow-hidden"
-                >
-                    <div className="left-[94px] top-[31px] absolute text-center justify-start text-neutral-900/60 text-3xl font-normal font-['Archivo'] leading-5">
-                        {/* 🌟 로그인 여부에 따른 문구 조건부 렌더링 */}
-                        {isLoggedIn ? (
-                            <span className="text-neutral-900 font-medium">
-                            {/* 🌟 userStats에서 닉네임이 오면 그걸 보여주고, 없으면 user_id 노출 */}
-                            Hello, {userStats?.nickname || localStorage.getItem('user_id')}.
-                        </span>
-                        ) : (
-                            "Start writing your journal."
-                        )}
+                <div className="relative group">
+                    
+                    {/* 🌈 1. 빨~보 전체가 보이는 파스텔 무지개 배경 블러/글로우 */}
+                    <div 
+                        className="absolute -inset-1.5 rounded-full blur-2xl opacity-40 group-hover:opacity-60 transition duration-500
+                                   bg-gradient-to-r from-[#FFB3BA] via-[#FFDFBA] via-[#FFFFBA] via-[#BAFFC9] via-[#BAE1FF] via-[#BDB2FF] to-[#E0C3FC]"
+                    ></div>
+            
+                    {/* 🌈 2. 빨~보 전체가 보이는 파스텔 무지개 테두리 */}
+                    <div 
+                        className="absolute inset-0 rounded-full p-[2.5px] /* 테두리 두께 */
+                                   bg-gradient-to-r from-[#FFB3BA] via-[#FFDFBA] via-[#FFFFBA] via-[#BAFFC9] via-[#BAE1FF] via-[#BDB2FF] to-[#E0C3FC]
+                                   opacity-80 group-hover:opacity-100 transition duration-300"
+                        style={{ 
+                            mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', 
+                            maskComposite: 'exclude',
+                            WebkitMaskComposite: 'destination-out' 
+                        }}
+                    ></div>
+            
+                    {/* 3. 메인 입력창 본체 */}
+                    <div 
+                        onClick={handleJournalInputClick}
+                        className="cursor-pointer transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]
+                                   flex items-center w-[800px] h-18 relative 
+                                   bg-white/90 backdrop-blur-2xl 
+                                   rounded-full 
+                                   shadow-[0px_10px_40px_rgba(0,0,0,0.05)] 
+                                   overflow-hidden"
+                    >
+                        {/* 왼쪽 로고 영역 */}
+                        <div className="ml-3 shrink-0 w-14 h-14 flex items-center justify-center">
+                            <img className="w-[1.5rem] h-[1.5rem] " src="/onions/main_icon6.png" alt="logo" />
+                        </div>
+            
+                        {/* 텍스트 영역 */}
+                        <div className="ml-4 text-left">
+                            {isLoggedIn ? (
+                                <div className="flex flex-col">
+                                    <span className="text-[#2D2D2D] text-2xl font-normal font-['Archivo'] leading-tight">
+                                        Hello, {userStats?.nickname || localStorage.getItem('user_id')}.
+                                    </span>
+                                </div>
+                            ) : (
+                                <span className="text-neutral-400 text-2xl font-normal font-['Archivo']">
+                                    Start writing your journal.
+                                </span>
+                            )}
+                        </div>
+            
+                        {/* 오른쪽 화살표 아이콘 */}
+                        <div className="absolute right-10 opacity-0 group-hover:opacity-100 group-hover:translate-x-2 transition-all duration-300">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2D2D2D" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </div>
                     </div>
-                    <img className="w-16 h-16 left-[13px] top-[5.50px] absolute" src={inputLogo} alt="logo" />
                 </div>
             </div>
             

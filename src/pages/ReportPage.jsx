@@ -506,9 +506,7 @@ export default function ReportPage() {
 
                         <div className="z-20 w-[532px] flex-col p-3 mb-1 top-[64px] absolute bg-cyan-100/25 rounded-[100px] shadow-[0px_3px_4px_0px_rgba(53,52,52,0.25)] outline outline-[1.40px] outline-white/40 inline-flex justify-center items-center gap-4">
                             <div className="text-black text-2xl font-normal font-['Archivo']">A Tree of New Beginnings</div>
-                            <button className="absolute right-6 p-2 hover:bg-black/5 rounded-full transition-colors">
-                                <ChevronRight size={24} color="black" />
-                            </button>
+                            
                         </div>
                         
                         {/* --- 나무 렌더링 부분 --- */}
