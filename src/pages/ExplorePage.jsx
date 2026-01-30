@@ -608,41 +608,38 @@ export default function ExplorePage() {
                 setChatHistory(prev => [...prev, ...newBubbles]);
             }
         } catch (error) {
-            console.group("🚀 Chat API Error Detail"); // 로그를 그룹화하여 보기 편하게 만듭니다.
-        
+            console.group("🚀 Chat API Error Detail");
+            console.error("Error Code:", error.code);
+            console.error("Error Message:", error.message);
+            
             if (error.response) {
-                // 1. 서버가 응답을 줬지만, 상태 코드가 2xx 범위를 벗어난 경우 (예: 400, 401, 500)
                 console.error("Status:", error.response.status);
-                console.error("Data:", error.response.data); // 백엔드에서 보낸 에러 메시지
-                console.error("Headers:", error.response.headers);
-                
-                if (error.response.status === 401) {
-                    console.warn("힌트: 토큰이 만료되었거나 인증 로직을 확인하세요.");
-                } else if (error.response.status === 500) {
-                    console.warn("힌트: 백엔드 서버 내부 로직(Python/DB)에서 에러가 났습니다.");
-                }
-        
-            } else if (error.request) {
-                // 2. 요청은 보냈으나 서버로부터 아무런 응답을 받지 못한 경우 (네트워크 문제, 타임아웃)
-                console.error("No Response Received:", error.request);
-                if (error.code === 'ECONNABORTED') {
-                    console.warn("힌트: 설정한 타임아웃(50초)이 초과되었습니다. AI 연산이 너무 깁니다.");
-                } else {
-                    console.warn("힌트: 서버가 꺼져있거나 주소(URL)가 틀렸을 수 있습니다.");
-                }
-        
-            } else {
-                // 3. 요청을 설정하는 중에 에러가 발생했거나, try 블록 내 자바스크립트 문법 에러
-                console.error("Internal Logic Error:", error.message);
-                console.warn("힌트: 데이터 클리닝 로직(cleanText 등)에서 null 값을 참조했는지 확인하세요.");
+                console.error("Data:", error.response.data);
             }
-        
             console.groupEnd();
         
-            // 사용자에게는 조금 더 구체적인 알림 제공
-            const errorMsg = error.response?.data?.detail || error.message || "Unknown Error";
-            alert(`Error: ${errorMsg}`);
+            // 🌟 [핵심 수정] 타임아웃 또는 서버 과부하 에러 처리
+            if (error.code === 'ECONNABORTED' || error.response?.status === 429) {
+                // 타임아웃(50초 초과)이거나 서버에서 너무 많은 요청(429)을 받았을 때
+                Swal.fire({
+                    title: 'Notice',
+                    text: 'Current AI analysis traffic is very high. Please try again in a few moments. 🌳',
+                    icon: 'warning',
+                    confirmButtonColor: '#6D5B98',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                // 그 외 일반적인 네트워크 에러 등
+                const errorMsg = error.response?.data?.detail || error.message || "Unknown Error";
+                Swal.fire({
+                    title: 'Error',
+                    text: `문제가 발생했습니다: ${errorMsg}`,
+                    icon: 'error',
+                    confirmButtonColor: '#6D5B98'
+                });
+            }
         
+            // 에러가 발생했으므로 질문 횟수 차감을 취소(복구)합니다.
             setChatCount(prev => prev - 1);
         
         } finally {
