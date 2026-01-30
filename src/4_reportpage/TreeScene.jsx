@@ -1,9 +1,92 @@
+/* eslint-disable react/no-unknown-property */
+
+
 import { useMemo, Suspense, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import PropTypes from 'prop-types';
 import api from '../api/axios';
+
+
+const NaturalHill = ({ color = "#eeeeee", height = 1.5, spread = 15 }) => {
+  const hillGeo = useMemo(() => {
+    // 64x64 세그먼트로 세밀한 곡면 표현
+    const size = 7;
+    const segments = 64;
+    const geo = new THREE.CircleGeometry(size, segments);
+    
+    // 정점 위치 데이터 추출
+    const positions = geo.attributes.position.array;
+
+    for (let i = 0; i < positions.length; i += 3) {
+      const x = positions[i];
+      const z = positions[i + 1]; // Plane은 기본적으로 XY 평면이므로 Y가 높이가 됨
+      
+      // 중심(0,0)으로부터의 거리 계산
+      const distance = Math.sqrt(x * x + z * z);
+      
+      // 가우시안 함수 적용: 중심은 솟아오르고 멀어질수록 0에 수렴
+      const h = height * Math.exp(-(distance * distance) / spread);
+      
+      // 높이값(y축) 업데이트
+      positions[i + 2] = h;
+    }
+
+    // 법선 벡터 재계산 (그림자가 곡면을 따라 자연스럽게 맺히도록 함)
+    geo.computeVertexNormals();
+    return geo;
+  }, [height, spread]);
+
+  return (
+    <mesh 
+      geometry={hillGeo} 
+      rotation={[-Math.PI / 2, 0, 0]} 
+      position={[0, -0.05, 0]} 
+      receiveShadow // 👈 나무나 자신의 높낮이 그림자를 받기 위해 필수!
+      castShadow    // 👈 언덕 자체가 그림자를 던지기 위해 필수!
+    >
+      <meshStandardMaterial 
+        color={color} 
+        roughness={0.8} 
+        metalness={0}
+        // 🌟 핵심 1: 양면 렌더링을 허용하거나 법선이 뒤집혀도 빛을 받게 합니다.
+        side={THREE.DoubleSide} 
+      />
+    </mesh>
+  );
+};
+
+NaturalHill.propTypes = {
+  color: PropTypes.string,
+  height: PropTypes.number,
+  spread: PropTypes.number,
+
+};
+
+const darkenColor = (colorStart, factor) => {
+  const c = new THREE.Color(colorStart);
+  const black = new THREE.Color("#000000");
+  
+  // HSL이 아닌 일반 lerp(RGB)를 사용하면 색상 변이 없이 어두워지기만 합니다.
+  c.lerp(black, Math.max(0, Math.min(0.4, factor))); 
+  
+  return c.getStyle(); 
+};
+
+// --- [NEW] 색상 보간 유틸리티 ---
+// 두 색상(hex) 사이를 factor(0~1) 비율만큼 섞어서 반환
+
+const lerpColor = (colorStart, colorEnd, factor) => {
+  const c1 = new THREE.Color(colorStart);
+  const c2 = new THREE.Color(colorEnd);
+  
+  // 🌟 RGB가 아닌 HSL 공간에서 보간합니다.
+  // 이 방식은 중간 지점에서도 채도(S)와 밝기(L)를 최대한 유지합니다.
+  c1.lerpHSL(c2, Math.max(0, Math.min(1, factor))); 
+  
+  return c1.getStyle(); 
+};
 
 // --- 유틸리티: 수치 매핑 ---
 const mapStat = (val, min, max) => {
@@ -124,6 +207,14 @@ const mapBig5ToTree = (stats, userId, serviceDays = 1, fullStats = null) => {
   const growthFactor = 1 + Math.log10(serviceDays + 1) * 0.5;
   const maxDepth = Math.min(Math.floor(Math.sqrt(serviceDays / 3)) + 1, 4);
 
+
+  const sympathyFactor = (stats.agreeableness?.sympathy || 5) / 10;
+  const depressionFactor = (stats.neuroticism?.depression || 5) / 10;
+  const trustFactor = (stats.agreeableness?.trust || 5) / 10;
+  const selfDisciplineFactor = (stats.conscientiousness?.self_discipline || 5) / 10;
+  const vulnerabilityFactor = (stats.neuroticism?.vulnerability || 5) / 10;
+  const selfConsciousnessFactor = (stats.neuroticism?.self_consciousness || 5) / 10;
+
   return {
     rng,
     maxDepth,
@@ -135,11 +226,13 @@ const mapBig5ToTree = (stats, userId, serviceDays = 1, fullStats = null) => {
     irregularity: mapStat(10 - (stats.conscientiousness?.orderliness || 5), 0.1, 1.2),
     leafDensity: Math.floor(mapStat(stats.extraversion?.gregariousness, 8, 25)),
     treeScale: mapStat(stats.extraversion?.activity_level, 3.5, 5.0) * growthFactor,
-    leafColor: (stats.extraversion?.cheerfulness || 5) > 5 ? "#77dd77" : "#5F8B5F",
-    leafVitality: stats.agreeableness?.trust || 5,
+    leafColor: lerpColor("#5F8B5F", "#77dd77", sympathyFactor),
+    leafVitalityFactor: trustFactor, // 0.0 ~ 1.0
     barkNoise: mapStat(stats.neuroticism?.anxiety, 0.1, 1.5),
-    trunkColor: (stats.neuroticism?.depression || 5) > 6 ? "#42342A" : "#5D4037",
-    flowerColor: (stats.extraversion?.cheerfulness || 5) > 7 ? "#FFB7C5" : "#FFF5BA" 
+    trunkColor: lerpColor("#8D6E63", "#3E2723", depressionFactor),
+    flowerColor: lerpColor("#FFF9C4", "#FFB7C5", selfDisciplineFactor),
+    vulnerabilityFactor: vulnerabilityFactor,
+    selfConsciousnessFactor: selfConsciousnessFactor,
   };
 };
 const FlowerCluster = ({ curve, radius, params }) => {
@@ -152,14 +245,19 @@ const FlowerCluster = ({ curve, radius, params }) => {
     const arr = [];
     const maxAttempts = 50; 
     // 일기 2개당 꽃 1개 생성 (최대 15개)
-    const targetCount = Math.min(Math.floor(params.totalDiaries / 2), 15);
-    console.log("targetCount: ", targetCount);
-    console.log("params.totalDiaries: ", params.totalDiaries);
-
+    // 🌟 기존 targetCount에 밀도 계수(flowerDensityFactor)를 곱합니다.
+    const baseTarget = Math.min(Math.floor(params.totalDiaries / 2), 15);
+    const targetCount = Math.floor(baseTarget * (params.flowerDensityFactor || 1));
+  
+    // 🌟 중간 가지에도 꽃이 '최소 한 개'는 보일 수 있게 확률적 보정
+    const finalTarget = (targetCount === 0 && params.flowerDensityFactor > 0 && params.rng() > 0.7) 
+      ? 1 : targetCount;
+  
     for (let i = 0; i < maxAttempts; i++) {
-      if (arr.length >= targetCount) break;
-
-      const t = 0.6 + params.rng() * 0.4;
+      if (arr.length >= finalTarget) break;
+  
+      // 잎보다는 조금 더 끝 쪽에 피게 t 범위 조정 (0.4 ~ 1.0)
+      const t = 0.4 + params.rng() * 0.6;
       const pos = curve.getPointAt(t);
       const tangent = curve.getTangentAt(t).normalize();
       const branchRadiusAtT = radius * (1 - t) + (radius * 0.4) * t;
@@ -228,26 +326,51 @@ const FlowerCluster = ({ curve, radius, params }) => {
   return (
     <group>
       {flowers.map((f) => {
-        // 🌟 [시각적 밸런스 재조정]
-        // 만개: 꽃잎 8개, 활짝(1.3), 수술 거대화(1.8)
-        // 봉오리: 꽃잎 5개, 꽉 다묾(0.1), 수술 최소화(0.2)
-        const petalCount = f.isFullBloom ? 8 : 5;
-        const tilt = f.isFullBloom ?0.1 : 1.3; 
-        const stamenScale = f.isFullBloom ? 1.2 : 0.5; 
+        // 🌟 [겹꽃 로직 핵심]
+        // 1. 레이어 수 결정: 자의식이 높을수록 1층에서 최대 3층까지 쌓임
+        const layerCount = f.isFullBloom ? Math.floor(1 + params.selfConsciousnessFactor * 2.5) : 1;
+        
+        // 2. 기본 꽃잎 수: 만개 시 6~8개 베이스
+        const petalsPerLayer = f.isFullBloom ? 6 : 5;
 
         return (
           <group key={f.id} position={f.pos} rotation={f.rotation}>
-            {/* 꽃잎 레이어 */}
-            {[...Array(petalCount)].map((_, j) => (
-              <group key={j} rotation={[0, 0, (Math.PI * 2 / petalCount) * j]}>
-                <mesh geometry={petalGeo} rotation={[tilt, 0, 0]}>
-                  <meshStandardMaterial color={params.flowerColor} side={THREE.DoubleSide} emissive={params.flowerColor} emissiveIntensity={0.3}/>
-                </mesh>
-              </group>
-            ))}
+            {/* 레이어 반복 생성 */}
+            {[...Array(layerCount)].map((_, layerIdx) => {
+                const layerScale = 1 - layerIdx * 0.2;
+                const layerTilt = f.isFullBloom ? (0.1 + layerIdx * 0.2) : 1.3;
+                
+                // 🌟 [수정] lerpColor 대신 darkenColor를 사용하여 보랏빛 유지
+                const shadowIntensity = layerIdx * 0.25; // 0.25로 조금 더 진하게 조절해봤습니다.
+                const layerColor = layerIdx === 0 
+                  ? params.flowerColor 
+                  : darkenColor(params.flowerColor, shadowIntensity);
+              
+                return (
+                  <group key={layerIdx} scale={layerScale}>
+                    {[...Array(petalsPerLayer)].map((__, pIdx) => {
+                    const angleOffset = (Math.PI * 2 / petalsPerLayer) * (layerIdx * 0.5);
+                    const rotationY = (Math.PI * 2 / petalsPerLayer) * pIdx + angleOffset;
+        
+                    return (
+                      <group key={pIdx} rotation={[0, 0, rotationY]}>
+                        <mesh geometry={petalGeo} rotation={[layerTilt, 0, 0]}>
+                          <meshStandardMaterial 
+                            color={layerColor} 
+                            side={THREE.DoubleSide} 
+                            emissive={layerColor} 
+                            emissiveIntensity={0.2} // 그림자 층은 발광을 낮춰야 더 깊이감 있음
+                          />
+                        </mesh>
+                      </group>
+                    );
+                  })}
+                </group>
+              );
+            })}
             
             {/* 수술 레이어: scale을 통해 봉오리 상태일 땐 거의 소멸 상태로 만듦 */}
-            <group scale={stamenScale} position={[0, 0, 0.01]}>
+            <group scale={f.isFullBloom ? 1.2 : 0.8} position={[0, 0, 0.01 * layerCount]}>
               {[...Array(f.isFullBloom ? 5 : 2)].map((_, k, arr) => (
                 <group key={k} rotation={[0, 0, (Math.PI * 2 / arr.length) * k]}>
                   <group rotation={[ (f.isFullBloom ? 0.4 : 0.1) + Math.PI / 2, 0, 0]}>
@@ -276,6 +399,8 @@ FlowerCluster.propTypes = {
     totalDiaries: PropTypes.number.isRequired,
     rng: PropTypes.func.isRequired,
     flowerColor: PropTypes.string.isRequired,
+    flowerDensityFactor: PropTypes.number,
+    selfConsciousnessFactor: PropTypes.number,
   }).isRequired
 };
 
@@ -312,30 +437,49 @@ const RecursiveBranch = ({ start, direction, length, radius, depth, params }) =>
 
   const barkMat = useMemo(() => getBarkMaterial(params.trunkColor), [params.trunkColor]);
 
-  return (
-    <group>
-      <mesh geometry={branchGeo} material={barkMat} castShadow />
-      {depth === 0 ? (
-        <>
-          {/* 🌟 radius를 추가로 넘겨줍니다 */}
-          <LeafCluster curve={curve} radius={radius} params={params} />
-          <FlowerCluster curve={curve} radius={radius} params={params} />
-        </>
-      ) : (
-        nextDirections.map((dir, i) => (
-          <RecursiveBranch 
-            key={i} 
-            start={endPoint} 
-            direction={dir} 
-            length={length * 0.75} 
-            radius={radius * 0.45} 
-            depth={depth - 1} 
-            params={params} 
-          />
-        ))
-      )}
-    </group>
-  );
+  // --- RecursiveBranch 컴포넌트 내부 ---
+return (
+  <group>
+    <mesh geometry={branchGeo} material={barkMat} castShadow />
+    
+    {/* 🌟 수정: depth가 0일 때뿐만 아니라 1일 때도 잎을 렌더링합니다. */}
+    {depth <= 1 && (
+      <LeafCluster curve={curve} radius={radius} params={{
+        ...params,
+        // 중간 가지(depth 1)는 끝 가지보다 잎을 조금 더 적게(60%) 배치
+        leafDensity: depth === 1 ? Math.floor(params.leafDensity * 0.6) : params.leafDensity 
+      }} />
+    )}
+
+    {/* 꽃은 여전히 가장 끝(정수리)에만 피우고 싶다면 depth === 0 유지 */}
+    {/* 🌟 꽃 렌더링 범위 확장: depth 0과 1 모두 출력 */}
+    {depth <= 1 && (
+      <FlowerCluster 
+        curve={curve} 
+        radius={radius} 
+        params={{
+          ...params,
+          // 🌟 끝 가지(0)는 100% 확률, 중간 가지(1)는 30% 확률로만 꽃을 생성
+          flowerDensityFactor: depth === 0 ? 1.0 : 0.3 
+        }} 
+      />
+    )}
+
+    {depth > 0 && (
+      nextDirections.map((dir, i) => (
+        <RecursiveBranch 
+          key={i} 
+          start={endPoint} 
+          direction={dir} 
+          length={length * 0.75} 
+          radius={radius * 0.45} 
+          depth={depth - 1} 
+          params={params} 
+        />
+      ))
+    )}
+  </group>
+);
 };
 
 
@@ -352,35 +496,67 @@ RecursiveBranch.propTypes = {
 const LeafCluster = ({ curve, radius, params }) => {
   const leaves = useMemo(() => {
     const arr = [];
+    const dummy = new THREE.Object3D(); // 회전 계산용 임시 객체
+
     for (let i = 0; i < params.leafDensity; i++) {
-      const t = 0.3 + params.rng() * 0.7;
+      // 🌟 수정: t의 시작 범위를 0.1로 낮춰 가지의 밑부분부터 잎이 나게 합니다.
+      // 0.1 + (0.0 ~ 0.9) = 0.1 ~ 1.0 구간 전체 활용
+      const t = 0.1 + params.rng() * 0.9; 
+      
       const pos = curve.getPointAt(t);
       const tangent = curve.getTangentAt(t).normalize();
       
-      // 🌟 표면 오프셋 계산
       const currentRadius = radius * (1 - t) + (radius * 0.4) * t;
-      let normal = new THREE.Vector3(0, 1, 0);
-      if (Math.abs(tangent.y) > 0.9) normal.set(1, 0, 0);
-      const surfaceDir = new THREE.Vector3().crossVectors(tangent, normal).normalize();
-      surfaceDir.applyAxisAngle(tangent, params.rng() * Math.PI * 2);
+      let helper = new THREE.Vector3(0, 1, 0);
+      if (Math.abs(tangent.y) > 0.9) helper.set(1, 0, 0);
       
-      const finalPos = pos.clone().add(surfaceDir.multiplyScalar(currentRadius));
+      const normal = new THREE.Vector3().crossVectors(tangent, helper).normalize();
+      const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
       
-      const rotation = [params.rng() * Math.PI, params.rng() * Math.PI, 0];
-      arr.push({ pos: [finalPos.x, finalPos.y, finalPos.z], rotation });
+      // 가지 둘레의 랜덤한 각도
+      const angleOnBranch = params.rng() * Math.PI * 2;
+      const surfaceDir = new THREE.Vector3()
+        .addScaledVector(normal, Math.cos(angleOnBranch))
+        .addScaledVector(binormal, Math.sin(angleOnBranch))
+        .normalize();
+
+      const finalPos = pos.clone().add(surfaceDir.clone().multiplyScalar(currentRadius));
+
+      // --- 🌟 회전 로직 핵심 수정 ---
+      // 1. 먼저 잎이 나뭇가지 바깥쪽(surfaceDir)을 바라보게 합니다.
+      dummy.position.copy(finalPos);
+      dummy.lookAt(finalPos.clone().add(surfaceDir));
+
+      // 2. Vulnerability에 따른 처짐(droop)과 랜덤 회전을 추가합니다.
+      // 잎의 로컬 X축으로 회전시켜 아래로 처지게 함
+      const droop = params.vulnerabilityFactor * Math.PI * 0.4; 
+      dummy.rotateX(Math.PI / 2 + droop); // 기본적으로 세우고 수치만큼 눕힘
+      
+      // 잎의 로컬 Y축(줄기 축)을 기준으로 랜덤하게 돌려 자연스러움 추가
+      dummy.rotateY((params.rng() - 0.5) * Math.PI * 0.5); 
+
+      arr.push({ 
+        pos: [finalPos.x, finalPos.y, finalPos.z], 
+        rotation: [dummy.rotation.x, dummy.rotation.y, dummy.rotation.z] 
+      });
     }
     return arr;
   }, [curve, radius, params]);
 
   const leafGeo = useMemo(() => {
-    const size = 0.6;
-    // 우호성(trust) 수치에 따라 잎의 모양 결정 (둥근 원형 vs 날카로운 평면)
-    const geo = params.leafVitality > 5 
-      ? new THREE.CircleGeometry(size * 0.7, 8) 
-      : new THREE.PlaneGeometry(size * 0.4, size * 1.6);
-    geo.translate(0, size, 0);
+    const baseSize = 0.4 + (params.vulnerabilityFactor * 0.8); 
+    const maxWidth = baseSize * (0.2 + params.leafVitalityFactor * 0.6); 
+    
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0); 
+    // 유선형 곡선 정의
+    shape.bezierCurveTo(maxWidth * 0.5, baseSize * 0.3, maxWidth, baseSize * 0.7, 0, baseSize * 1.2);
+    shape.bezierCurveTo(-maxWidth, baseSize * 0.7, -maxWidth * 0.5, baseSize * 0.3, 0, 0);
+
+    const geo = new THREE.ShapeGeometry(shape);
+    // 잎의 뿌리 부분이 회전 중심이 되도록 이미 0,0에서 시작함
     return geo;
-  }, [params.leafVitality]);
+  }, [params.vulnerabilityFactor, params.leafVitalityFactor]);
 
   return (
     <group>
@@ -391,6 +567,7 @@ const LeafCluster = ({ curve, radius, params }) => {
             side={THREE.DoubleSide} 
             transparent 
             opacity={0.9} 
+            roughness={0.8}
           />
         </mesh>
       ))}
@@ -405,7 +582,8 @@ LeafCluster.propTypes = {
   params: PropTypes.shape({
     rng: PropTypes.func.isRequired,
     leafDensity: PropTypes.number.isRequired,
-    leafVitality: PropTypes.number.isRequired,
+    leafVitalityFactor: PropTypes.number.isRequired,
+    vulnerabilityFactor: PropTypes.number.isRequired,
     leafColor: PropTypes.string.isRequired,
   }).isRequired
 };
@@ -438,6 +616,9 @@ export default function PsychologicalTreeScene() {
             stats: json.big5_scores,
             days: json.service_days || 1
           });
+
+          console.log("big5_scores:", json.big5_scores);
+          console.log("service_days:", json.service_days);
           
           // 2. 🌟 꽃 피우기 결정용 전체 데이터 저장 (mood_stats 포함됨)
           setFullData(json); 
@@ -482,7 +663,6 @@ export default function PsychologicalTreeScene() {
   return (
     <div style={{ width: "100vw", height: "100vh", background: "#f8f9fa" }}>
       <Canvas shadows camera={{ position: [0, 10, 25], fov: 45 }}>
-        {/* 나무 크기에 맞춰 카메라 중심점(target) 높이 조절 */}
         <OrbitControls 
           makeDefault 
           target={[0, treeParams.treeScale * 1.2, 0]} 
@@ -506,10 +686,14 @@ export default function PsychologicalTreeScene() {
           )}
         </Suspense>
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
-          <planeGeometry args={[100, 100]} />
-          <meshStandardMaterial color="#eeeeee" />
-        </mesh>
+        {/* 🌟 [수정된 부분] 입체감이 있는 언덕 형태의 땅 */}
+        {/* 🌟 새로운 자연스러운 언덕 적용 */}
+        <NaturalHill 
+          color="#e2c6ab" 
+          height={1.8}  // 솟아오르는 높이
+          spread={2}   // 퍼지는 범위 (이 값이 클수록 완만한 평원이 됩니다)
+        />
+
       </Canvas>
     </div>
   );
@@ -541,9 +725,29 @@ export function TreeOnly({ big5_scores, service_days = 1, mood_stats = null }) {
           params={treeParams}          // 👈 여기에 flowerStage, flowerColor가 들어있음
         />
       )}
-      <ambientLight intensity={0.8} />
-      <pointLight position={[10, 10, 10]} intensity={1.5} />
+      {/* 🌟 1. 환경광 낮추기: 0.8 -> 0.3으로 낮춰야 그림자가 선명해집니다. */}
+      <ambientLight intensity={0.3} />
+      
+      {/* 🌟 2. 직사광선 추가: 특정 각도에서 빛이 들어와야 언덕의 경사면에 음영이 생깁니다. */}
+      <directionalLight
+        position={[15, 25, 10]} // 👈 우측 상단에서 비춤
+        castShadow
+        intensity={1.2}
+        shadow-bias={-0.0001}
+        shadow-mapSize={[2048, 2048]}
+      >
+      </directionalLight>
+      {/* 포인트 조명은 보조광으로 유지 */}
+      <pointLight position={[-10, 10, -10]} intensity={0.5} />
+      
+      <NaturalHill 
+        color="#e2c6ab" 
+        height={1.8} 
+        spread={15} // 👈 spread가 2면 너무 뾰족할 수 있습니다. 15~20 정도를 추천해요.
+      />
     </Suspense>
+
+    
   );
 }
 
