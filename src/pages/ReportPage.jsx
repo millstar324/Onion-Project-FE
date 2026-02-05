@@ -610,7 +610,7 @@ export default function ReportPage() {
                         
                                 return (
                                     <div className={`flex-1 grid gap-x-10 min-h-0 overflow-y-auto scrollbar-hide
-                                        content-center /* 🌟 내용물을 수직 중앙에 예쁘게 모아줍니다 */
+                                        content-start /* 🌟 내용물을 수직 중앙에 예쁘게 모아줍니다 */
                                         ${/* 🌟 2. 필터링된 개수(visibleTags.length)를 기준으로 그리드 모양 결정 */
                                           visibleTags.length <= 2 ? 'grid-cols-1' : 
                                           visibleTags.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}
