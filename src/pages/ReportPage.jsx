@@ -22,7 +22,7 @@ export default function ReportPage() {
     // --- 1. 상태 관리 (State) ---
     const [treeAge, setTreeAge] = useState(0);
     const [moodRawData, setMoodRawData] = useState(null); // API 전체 데이터 저장
-    const [moodScope, setMoodScope] = useState('month'); // 현재 모드 (week | month | all)
+    const [moodScope, setMoodScope] = useState('all'); // 현재 모드 (week | month | all)
     const [tagData, setTagData] = useState([]);
     const [keywordData, setKeywordData] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -606,10 +606,10 @@ export default function ReportPage() {
                             {(() => {
                                 const visibleTags = tagData
                                     .filter(tag => tag.count > 0) // 0보다 큰 것만 통과
-                                    .slice(0, 6);                 // 그 중 상위 6개만 선택
+                                    .slice(0, 100);                 // 그 중 상위 6개만 선택
                         
                                 return (
-                                    <div className={`flex-1 grid gap-x-10 min-h-0 
+                                    <div className={`flex-1 grid gap-x-10 min-h-0 overflow-y-auto scrollbar-hide
                                         content-center /* 🌟 내용물을 수직 중앙에 예쁘게 모아줍니다 */
                                         ${/* 🌟 2. 필터링된 개수(visibleTags.length)를 기준으로 그리드 모양 결정 */
                                           visibleTags.length <= 2 ? 'grid-cols-1' : 
@@ -651,30 +651,45 @@ export default function ReportPage() {
                             })()}
                         </div>
 
-                        {/* 하단 섹션: Discovery Keywords (높이 40% - 가장 넓게) */}
-                        <div className="flex-1 rounded-[30px] p-6 flex flex-col relative overflow-hidden
-                        /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                        {/* --- 하단 섹션: Discovery Keywords (상위 10개 최적화) --- */}
+                    <div className="flex-1 rounded-[30px] p-6 flex flex-col relative overflow-hidden
+                        /* 🌟 글래스모피즘 스타일 유지 */
                         bg-white/20 backdrop-blur-xl 
-                        /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
                         border-x border-white/40 
-                        /* 🌟 입체감: 은은한 그림자 */
-                        shadow-[10px_0_30px_rgba(0,0,0,0.05)]
-                        ">
-                            <div className="absolute inset-0 rounded-[30px] bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
-                            <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-1 flex items-center gap-1 z-10"><Sparkles size={18} className="text-emerald-600" /> Discovery Keywords</div>
-                            {/* 🌟 키워드 유동적 배치: flex-wrap + justify-center + content-center */}
-                            <div className="flex-1 flex flex-wrap justify-center content-center gap-x-6 gap-y-3 z-10 p-2">
-                                {keywordData.length > 0 ? keywordData.map((kw, i) => {
-                                    const fontSize = maxKwCount === minKwCount ? 20 : ((kw.count - minKwCount) / (maxKwCount - minKwCount)) * (24 - 12) + 12;
-                                    return (
-                                        <span key={i} className="cursor-default hover:text-emerald-700 hover:scale-110 transition-all duration-300 font-['Archivo'] font-bold text-neutral-700/80"
-                                            style={{ fontSize: `${fontSize}px`, opacity: 0.6 + (kw.count / maxKwCount) * 0.4 }}>
-                                            {kw.text}
-                                        </span>
-                                    );
-                                }) : <div className="text-neutral-400 italic">No keywords found.</div>}
-                            </div>
+                        shadow-[10px_0_30px_rgba(0,0,0,0.05)]">
+                        
+                        <div className="absolute inset-0 rounded-[30px] bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                        
+                        <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-1 flex items-center gap-1 z-10">
+                            <Sparkles size={18} className="text-emerald-600" /> 
+                            Discovery Keywords
                         </div>
+                    
+                        {/* 🌟 가변 키워드 영역 */}
+                        <div className="flex-1 flex flex-wrap justify-center content-center gap-x-6 gap-y-3 z-10 p-2">
+                            {keywordData.length > 0 ? (
+                                // 🌟 1. 데이터 복사 후 빈도수(count) 기준 내림차순 정렬
+                                // 🌟 2. slice(0, 10)으로 상위 10개만 선별
+                                [...keywordData]
+                                    .sort((a, b) => b.count - a.count)
+                                    .slice(0, 10)
+                                    .map((kw, i) => {
+                                        const fontSize = maxKwCount === minKwCount 
+                                            ? 20 
+                                            : ((kw.count - minKwCount) / (maxKwCount - minKwCount)) * (24 - 12) + 12;
+                                        
+                                        return (
+                                            <span key={i} className="cursor-default hover:text-emerald-700 hover:scale-110 transition-all duration-300 font-['Archivo'] font-bold text-neutral-700/80"
+                                                style={{ fontSize: `${fontSize}px`, opacity: 0.6 + (kw.count / maxKwCount) * 0.4 }}>
+                                                {kw.text}
+                                            </span>
+                                        );
+                                    })
+                            ) : (
+                                <div className="text-neutral-400 italic">No keywords found.</div>
+                            )}
+                        </div>
+                    </div>
 
                     </div>
                 </div>
