@@ -187,7 +187,7 @@ export default function Home() {
                             <div className="ml-5 flex-1 text-left">
                                 {isLoggedIn ? (
                                     <span className="text-[#2D2D2D] text-xl font-medium font-['Archivo']">
-                                        Hello, {userStats?.nickname || "User"}.
+                                        Hello, {userStats?.user_id || "User"}.
                                     </span>
                                 ) : (
                                     <span className="text-neutral-400 text-xl font-normal font-['Archivo']">
