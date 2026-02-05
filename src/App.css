@@ -98,3 +98,31 @@
   opacity: 1;
   transition: opacity 0s !important; /* 스크롤 중에는 즉시 노출 */
 }
+
+.container_purple {
+  /* 컨테이너의 너비와 높이를 설정합니다. */
+  width: 100%;
+  height: 100vh; /* 예시로 화면 전체 높이 사용 */
+  position: relative;
+  overflow: hidden; /* 배경이 컨테이너 밖으로 나가지 않도록 설정합니다. */
+
+  /* 배경에 두 개의 radial-gradient를 적용합니다. */
+  background: 
+    /* 왼쪽 상단의 파란색 빛 번짐 효과 */
+    radial-gradient(
+      circle at top left,
+      rgba(178,135,235,0.5), /* 파란색 (하늘색)과 불투명도 조절 */
+      transparent 50%
+    ),
+    /* 오른쪽 하단의 파란색 빛 번짐 효과 */
+    radial-gradient(
+      circle at bottom right,
+      rgba(178,135,235,0.5), /* 파란색 (하늘색)과 불투명도 조절 */
+      transparent 50%
+    ),
+    /* 전체 배경색 (흰색 또는 아주 연한 회색) */
+    #f8f9fa; 
+
+  /* 배경이 부드럽게 섞이도록 설정합니다. (선택 사항) */
+  background-blend-mode: screen; 
+}

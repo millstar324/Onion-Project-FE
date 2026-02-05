@@ -875,7 +875,7 @@ export default function WritePage() {
 
         
         
-        <div className="min-h-screen w-full bg-brand-bg m-0 p-0 overflow-x-hidden flex items-center justify-center relative">
+        <div className="w-screen h-screen bg-[linear-gradient(150deg,_rgba(228,230,231,0.8),_rgba(238,236,221,0.8),_rgba(246,239,198,0.8),_rgba(252,231,177,0.8))] m-0 p-0 overflow-hidden flex items-center justify-center relative">
             {/* --- 1. 진입 시 선택 모달 --- */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 backdrop-blur-md">
@@ -1141,84 +1141,92 @@ export default function WritePage() {
             )}
 
             {/*메인*/}
-            <div className="w-[95%] h-[680px] relative -translate-x-[27px] flex items-center justify-center
-            bg-[linear-gradient(150deg,_rgba(242,224,220,0.37),_rgba(252,227,186,0.37),_rgba(241,219,128,0.37),_rgba(238,202,94,0.37))] 
+            <div className=" relative flex items-center justify-center
             rounded-[40px] 
-            shadow-[0px_1.1966018676757812px_29.91504669189453px_0px_rgba(251,165,99,0.10)] 
-            outline outline-[3px] outline-offset-[-3px] 
-            outline-white/50 backdrop-blur-2xl overflow-hidden">
+            backdrop-blur-2xl overflow-hidden"
+            style={{
+                width: 'calc(100vw - 10px)',  // 좌우 30px 여백
+                height: 'calc(100vh - 10px)', // 상하 30px 여백 (FHD에서도 스크롤 안 생김)
                 
-                <div className="flex w-[calc(100%-80px)] h-[612px] gap-1 items-start justify-center">
-                
+            }}>
+                <div className="flex w-[calc(100%-40px)] h-[96%] gap-1 items-stretch justify-center">
+                <div className="flex w-full h-full p-2 gap-2 items-stretch justify-center">
                 {/* 왼쪽 일기 작성 공간 */}
-                <div className="flex-1 h-full bg-neutral-50 rounded-tl-[35px] rounded-bl-[35px] relative p-16">
-                    {/* 제목 입력창 */}
+                <div className="flex-1 h-full bg-[#ffffff] rounded-[20px] relative p-8 flex flex-col min-w-0">
                     <input 
                         className="bg-transparent w-full h-[50px] outline-none text-neutral-900 placeholder:text-neutral-900/30 text-3xl font-normal mb-4" 
                         placeholder="Title"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                     />
-                    <div className="w-full h-[2px] bg-neutral-900/10 mb-6" />
+                    <div className="w-full h-[2px] bg-neutral-900/10 mb-6 shrink-0" />
 
-                    {/* 에디터 영역: 이전의 hr 관련 호버 스타일은 제거했습니다. */}
-                    {/* --- 2. SimpleBar 적용 영역 --- */}
-                    <SimpleBar 
-                        style={{ height: 'calc(100% - 120px)' }} 
-                        autoHide={true}
-                        // 라이브러리 내부 스크롤 기능을 활성화하기 위해 필요
-                        className="custom-simplebar" 
-                    >
+                    {/* 에디터: 남은 높이 모두 차지 */}
+                    <SimpleBar style={{ flex: 1, minHeight: 0 }} className="custom-simplebar w-full">
                         <div 
                             ref={editorRef}
                             contentEditable
                             suppressContentEditableWarning={true}
                             onInput={() => {}}
                             onClick={handleImageClick}
-                            // [중요] 부모인 SimpleBar가 스크롤을 담당하므로 여기서는 overflow-y-auto를 뺍니다.
-                            className="w-full h-full outline-none text-neutral-900 text-xl leading-relaxed
-                                       empty:before:content-['Whatever_you’re_holding_inside,_you_can_let_it_out.'] 
-                                       empty:before:text-neutral-900/30 
-                                       empty:before:pointer-events-none
-                                       [&_img]:transition-all [&_img]:duration-300
-                                       [&_img:hover]:brightness-90 [&_img:hover]:grayscale-[0.5] [&_img:hover]:ring-2 [&_img:hover]:ring-blue-300"
+                            className="w-full h-full outline-none text-neutral-900 text-xl leading-relaxed empty:before:content-['Whatever_you’re_holding_inside,_you_can_let_it_out.'] empty:before:text-neutral-900/30 empty:before:pointer-events-none [&_img]:transition-all [&_img]:duration-300 [&_img:hover]:brightness-90 [&_img:hover]:grayscale-[0.5] [&_img:hover]:ring-2 [&_img:hover]:ring-blue-300"
                         />
                     </SimpleBar>
                 </div>
 
                 {/* 도구 팔레트 (기존과 동일하지만 이미지 클릭 로직 포함) */}
-                <div className="w-[40px] h-full bg-neutral-50 flex flex-col items-center pt-10 gap-4 relative">
-                    <button onClick={() => applyStyle('bold')} className="hover:bg-gray-200 p-2 rounded"><FontBoldIcon /></button>
-                    <button onClick={() => applyStyle('italic')} className="hover:bg-gray-200 p-2 rounded"><FontItalicIcon /></button>
+                {/* --- 도구 팔레트 (Mirror Effect 적용) --- */}
+                <div className="w-[55px] shrink-0 h-full relative flex flex-col items-center pt-10 gap-4 z-30
+                    /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                    bg-white/20 backdrop-blur-xl 
+                    /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                    border-x border-white/40 
+                    /* 🌟 입체감: 은은한 그림자 */
+                    shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                    transition-all duration-300 overflow-hidden rounded-[20px]">
                     
-                    <div className="relative group">
-                        <button className="p-2 hover:bg-gray-200 rounded"><PaintBucket size={20} /></button>
+                    {/* 🌟 거울 표면 광택 효과 (선택 사항) */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                
+                    {/* 버튼들 (스타일링 유지) */}
+                    <button onClick={() => applyStyle('bold')} className="z-10 hover:bg-white/40 p-2 rounded-full transition-all active:scale-90"><FontBoldIcon /></button>
+                    <button onClick={() => applyStyle('italic')} className="z-10 hover:bg-white/40 p-2 rounded-full transition-all active:scale-90"><FontItalicIcon /></button>
+                    
+                    <div className="relative group z-10">
+                        <button className="p-2 hover:bg-white/40 rounded-full transition-all"><PaintBucket size={20} /></button>
                         <input type="color" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => applyStyle('hiliteColor', e.target.value)} />
                     </div>
-                    <div className="relative group">
-                        <button className="p-2 hover:bg-gray-200 rounded"><Baseline size={20} /></button>
+                    <div className="relative group z-10">
+                        <button className="p-2 hover:bg-white/40 rounded-full transition-all"><Baseline size={20} /></button>
                         <input type="color" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => applyStyle('foreColor', e.target.value)} />
                     </div>
-
-                    <button onClick={insertCustomLine} className="hover:bg-gray-200 p-2 rounded"><SlashIcon /></button>
-                    <button onClick={() => applyStyle('underline')} className="hover:bg-gray-200 p-2 rounded"><UnderlineIcon /></button>
-                    <button onClick={() => applyStyle('strikeThrough')} className="hover:bg-gray-200 p-2 rounded"><StrikethroughIcon /></button>
+                
+                    <button onClick={insertCustomLine} className="z-10 hover:bg-white/40 p-2 rounded-full transition-all"><SlashIcon /></button>
+                    <button onClick={() => applyStyle('underline')} className="z-10 hover:bg-white/40 p-2 rounded-full transition-all"><UnderlineIcon /></button>
+                    <button onClick={() => applyStyle('strikeThrough')} className="z-10 hover:bg-white/40 p-2 rounded-full transition-all"><StrikethroughIcon /></button>
                     
-                    <button onClick={() => fileInputRef.current.click()} className="hover:bg-gray-200 p-2 rounded"><ImageIcon /></button>
+                    <button onClick={() => fileInputRef.current.click()} className="z-10 hover:bg-white/40 p-2 rounded-full transition-all"><ImageIcon /></button>
                     
                     <button 
                         onClick={() => setIsSettingsOpen(true)} 
-                        className="absolute bottom-5 hover:bg-gray-200 p-2 rounded transition-colors"
+                        className="absolute bottom-10 z-10 hover:bg-white/40 p-2 rounded-full transition-all active:rotate-45"
                     >
                         <GearIcon />
                     </button>
                 </div>
 
                 {/* 오른쪽 카테고리 선택 영역 */}
-                <div className="scrollbar-hide w-64 h-[612px] relative z-20 overflow-y-auto overflow-x-hidden flex flex-col gap-1">
+                <div className="scrollbar-hide w-72 shrink-0 h-full relative z-20 overflow-y-auto flex flex-col gap-1">
                     
                     {/* 1. Today Mood (이미지 버튼화) */}
-                    <div className="w-full h-[90px] bg-neutral-50 rounded-tr-[35px] p-3">
+                    <div className="w-full h-[90px] 
+                    bg-white/20 backdrop-blur-xl 
+                    /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                    border-x border-white/40 
+                    /* 🌟 입체감: 은은한 그림자 */
+                    shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                    rounded-[20px] p-3">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
                         <div className="text-xl mb-1">Today Mood</div>
                         <div className="flex justify-between gap-1">
                             {['delight', 'happy', 'soso', 'angry', 'sad'].map((m) => (
@@ -1234,7 +1242,14 @@ export default function WritePage() {
                     </div>
 
                     {/* 2. Weather (이미지 버튼화) */}
-                    <div className="w-full h-[85px] bg-neutral-50 p-3">
+                    <div className="w-full h-[85px] 
+                    bg-white/20 backdrop-blur-xl 
+                    /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                    border-x border-white/40 
+                    /* 🌟 입체감: 은은한 그림자 */
+                    shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                    rounded-[20px] p-3">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
                         <div className="text-xl mb-2">Weather</div>
                         <div className="flex justify-between gap-1">
                             {['sun', 'cloud', 'dark', 'rain', 'snow'].map((w) => (
@@ -1250,7 +1265,14 @@ export default function WritePage() {
                     </div>
 
                     {/* 3. Calendar (날짜 기록) */}
-                    <div className="w-full bg-white flex justify-center p-1">
+                    <div className="w-full 
+                    bg-white/20 backdrop-blur-xl 
+                    /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                    border-x border-white/40 
+                    /* 🌟 입체감: 은은한 그림자 */
+                    shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                    rounded-[20px] flex justify-center p-1">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
                         <Calendar 
                             mode="single" 
                             selected={date} 
@@ -1258,26 +1280,33 @@ export default function WritePage() {
                             onSelect={(newDate) => {
                                 if (newDate) setDate(newDate);
                             }} 
-                            className="scale-90 origin-top" 
+                            className="scale-100 origin-top bg-[#ffe18f00]" 
                         />
                     </div>
 
                     {/* 4. Tags 섹션 */}
-                    <div className="w-full h-auto bg-neutral-50 p-3">
-                        <div className="text-xl mb-2 font-['Archivo']">Tags</div>
+                    <div className="flex-1 min-h-[160px] w-full 
+                    bg-white/20 backdrop-blur-xl 
+                    /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                    border-x border-white/40 
+                    /* 🌟 입체감: 은은한 그림자 */
+                    shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                    rounded-[20px] p-3 flex flex-col overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                        <div className="text-xl mb-2 font-['Archivo'] shrink-0">Tags</div>
                         
-                        {/* 기존 태그 목록 (DB에서 가져온 값들) */}
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        {/* 실제 태그들이 나열되는 공간: 공간이 남으면 늘어나고, 넘치면 내부 스크롤 */}
+                        <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-wrap content-start gap-2 mb-3">
                             {tags
-                            .filter(tag => tag !== 'unsorted') // 🌟 'unsorted' 태그 제외
+                            .filter(tag => tag !== 'unsorted')
                             .map((tag, index) => (
                                 <button 
                                     key={`${tag}-${index}`}
                                     onClick={() => toggleTagSelection(tag)}
-                                    className={`px-2 py-1 rounded-[5px] text-sm transition-colors font-['Archivo'] ${
+                                    className={`px-2 py-1 rounded-[5px] text-sm h-fit transition-colors font-['Archivo'] ${
                                         selectedTags.includes(tag) 
                                             ? 'bg-rose-500 text-white' 
-                                            : 'bg-gray-200 text-neutral-600'
+                                            : 'bg-white text-neutral-600'
                                     }`}
                                 >
                                     # {tag}
@@ -1285,19 +1314,18 @@ export default function WritePage() {
                             ))}
                         </div>
                         
-                        {/* 새 태그 입력 및 추가 버튼 */}
-                        <div className="flex items-center bg-gray-100 rounded-[3px] px-2 group">
+                        {/* 태그 입력창: Tags 영역의 최하단에 고정 */}
+                        <div className="shrink-0 flex items-center bg-white rounded-[8px] px-2 group">
                             <input 
                                 className="bg-transparent text-sm w-full h-8 outline-none font-['Archivo']"
-                                placeholder="Add new tag & Press Enter"
+                                placeholder="Add new tag & Enter"
                                 value={tagInput}
                                 onChange={(e) => setTagInput(e.target.value)}
-                                onKeyDown={handleTagKeyDown} // 엔터 키 연결
+                                onKeyDown={handleTagKeyDown}
                             />
                             <button 
-                                onClick={handleAddTag} // 로컬 추가 함수 연결
+                                onClick={handleAddTag}
                                 className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-                                title="Add tag"
                             >
                                 <Plus size={16} className="text-gray-400 group-hover:text-black" />
                             </button>
@@ -1333,19 +1361,20 @@ export default function WritePage() {
                         </div>
                         <button 
                             onClick={() => handleSave(true)}
-                            className="group flex-1 bg-neutral-400 rounded-[10px] text-white text-sm hover:bg-neutral-500"
+                            className="group flex-1 bg-[#ffe397] rounded-[10px] text-[#555555] text-normal hover:bg-neutral-500"
                         >
                             Save as draft
                         </button>
                     </div>
                     <button 
                         onClick={() => handleSave(false)}
-                        className="group w-full h-[50px] bg-black rounded-[10px] text-white text-xl mt-1 hover:bg-gray-800"
+                        className="group  w-full py-2 bg-[#303030] rounded-[10px] text-white text-xl mt-1 hover:bg-gray-800"
                     >
                         Save Diary
                     </button>
                 </div>
             </div>
+        </div>
         </div>
         
         {/* 설정 모달 */}

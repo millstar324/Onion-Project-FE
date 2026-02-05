@@ -94,7 +94,8 @@ const JournalEntry = ({ data, onDeleteSuccess, isChatActive, onSelect, isSelecte
         // 내부 요소들의 absolute 배치를 위해 w, h 고정
         <div 
             onClick={handleClick}
-            className={`w-[1473px] h-[602px] relative gap-2 overflow-hidden shrink-0 mb-12 transition-all duration-300 rounded-xl
+            /* 🌟 핵심: w-[95%]로 화면의 대부분을 채우고, max-w를 QHD에 맞춰 2200px 정도로 높였습니다. */
+            className={`w-[95%] max-w-[2200px] h-[620px] relative flex gap-2 overflow-hidden shrink-0 mb-12 transition-all duration-300 rounded-xl
                 ${isChatActive ? 'cursor-pointer hover:bg-blue-50/50 hover:shadow-xl' : 'bg-transparent'}
                 ${isSelected ? 'ring-4 ring-blue-400 bg-blue-50/30' : ''}
             `}
@@ -102,137 +103,122 @@ const JournalEntry = ({ data, onDeleteSuccess, isChatActive, onSelect, isSelecte
             
             {/* 왼쪽 글 공간 */}
             {/* 왼쪽 글 공간 */}
-            <div className={`w-[1093px] h-[595px] left-[4px] top-[7px] absolute overflow-hidden shadow-sm rounded-sm transition-colors ${isSelected ? 'bg-blue-50' : 'bg-white'}`}>
-                <div className="w-[calc(100%-128px)] ml-7 h-24 left-[32px] top-[12px] relative overflow-hidden">
-                    <div className="top-[50px] absolute justify-start text-neutral-900 text-4xl font-normal font-['Archivo'] leading-5">
+            <div className={`flex-1 h-[610px] relative overflow-hidden shadow-sm rounded-[20px] transition-colors 
+                ${isSelected ? 'bg-blue-50' : 'bg-white/60 backdrop-blur-xl border border-white/30 shadow-[0px_0px_10px_rgba(0,0,0,0.08)]'}`}>
+                
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                
+                {/* 제목 영역: w-full과 패딩으로 여백 확보 */}
+                <div className="w-full px-12 h-24 mt-6 relative overflow-hidden">
+                    <div className="text-neutral-900 text-[clamp(1.5rem,2.5vw,2.5rem)] font-normal font-['Archivo'] truncate">
                         {data.title}
                     </div>
-                    <div className="w-full h-[1px] top-[93px] absolute bg-neutral-900/30" />
+                    <div className="w-full h-[1px] mt-4 bg-neutral-900/30" />
                     
-                    {/* 🌟 챗봇 활성화 시 버튼들 비활성화 */}
                     {!isChatActive && (
-                        <div className="flex items-center absolute right-[20px] bottom-[28%] gap-2 z-40">
+                        <div className="flex items-center absolute right-12 top-0 gap-2 z-40">
                             {data.is_temporary && (
-                                <button onClick={handleEditClick} className="hover:bg-gray-100 p-2 rounded-full"><Edit2 size="20" color="black" /></button>
+                                <button onClick={handleEditClick} className="hover:bg-gray-100 p-2 rounded-full transition-all"><Edit2 size="20" color="black" /></button>
                             )}
                             <button onClick={handleDeleteClick} className="hover:bg-rose-50 p-2 rounded-full transition-colors group"><Trash2 size="20" className="text-gray-400 group-hover:text-rose-500" /></button>
                         </div>
                     )}
                 </div>
 
-                {/* 본문 영역 - 챗봇 활성화 시 클릭 이벤트 전파 방지 */}
+                {/* 본문 영역: h-[calc]로 높이 유동적 조절 */}
                 <div 
                     dangerouslySetInnerHTML={{ __html: data.content }} 
-                    className={`custom-scroll break-all overflow-y-auto w-[calc(100%-128px)] h-[400px] bottom-[35px] left-[65px] top-[130px] absolute text-black text-xl font-normal font-['Archivo'] leading-7 ${isChatActive ? 'pointer-events-none' : ''}`}
+                    className={`custom-scroll break-all overflow-y-auto w-full px-16 h-[400px] mt-6 text-black text-xl font-normal font-['Archivo'] leading-relaxed ${isChatActive ? 'pointer-events-none' : ''}`}
                 />
             </div>
             
             
-            {/* 중간 경계 바 */}
-            <div className="w-[532px] h-0 left-[1098px] z-30 top-[50px] absolute origin-top-left rotate-90 outline outline-1 outline-offset-[-0.50px] outline-black/5"></div>
+            {/* 중간 경계 바
+            <div className="w-[532px] h-0 left-[1098px] z-30 top-[50px] absolute origin-top-left rotate-90 outline outline-1 outline-offset-[-0.50px] outline-black/5"></div> */}
 
             {/* 오른쪽 카테고리 공간 */}
-            <div className="w-[381px] h-[597px] right-[0px] top-[5px] absolute overflow-hidden">
-                {/* 탭 헤더 */}
-                <div
-                    onClick={() => setActiveTab('standard')}
-                    className={`cursor-pointer flex justify-center w-[130px] h-7 items-center left-[2%] top-0 absolute rounded-tl-[10px] rounded-tr-[10px] transition-colors ${activeTab === 'standard' ? 'bg-white z-20' : 'bg-[#E2E1E1] text-[#7C7C7C]'}`}
-                >
-                    <div className={`text-xl font-normal font-['Archivo'] ${activeTab === 'standard' ? 'text-[#2F2E2C]' : 'text-[#7C7C7C]'}`}>Standard</div>
-                </div>
-    
-                {/* [수정] is_temporary가 false일 때만 Insight 탭 헤더 표시 */}
-                {!data.is_temporary && (
+            <div className="w-[380px] shrink-0 h-[610px] relative overflow-hidden">
+                {/* 탭 헤더 위치 조정 */}
+                <div className="flex gap-2 px-4 h-9">
                     <div
-                        onClick={() => setActiveTab('insight')}
-                        className={`cursor-pointer flex justify-center w-[110px] h-7 items-center left-[38%] top-0 absolute rounded-tl-[10px] rounded-tr-[10px] transition-colors ${activeTab === 'insight' ? 'bg-white z-20' : 'bg-[#E2E1E1] text-[#7C7C7C]'}`}
+                        onClick={() => setActiveTab('standard')}
+                        className={`cursor-pointer flex-1 flex justify-center items-center rounded-t-[15px] transition-all ${activeTab === 'standard' ? 'bg-white/60 backdrop-blur-xl border border-white/30 shadow-sm z-20' : 'bg-[#e2e1e1a7] text-[#7C7C7C]'}`}
                     >
-                        <div className={`text-xl font-normal font-['Archivo'] ${activeTab === 'insight' ? 'text-[#2F2E2C]' : 'text-[#7C7C7C]'}`}>Insight</div>
+                        <div className="text-lg font-['Archivo']">Standard</div>
                     </div>
-                )}
+        
+                    {!data.is_temporary && (
+                        <div
+                            onClick={() => setActiveTab('insight')}
+                            className={`cursor-pointer flex-1 flex justify-center items-center rounded-t-[15px] transition-all ${activeTab === 'insight' ? 'bg-white/60 backdrop-blur-xl border border-white/30 shadow-sm z-20' : 'bg-[#e2e1e1a7] text-[#7C7C7C]'}`}
+                        >
+                            <div className="text-lg font-['Archivo']">Insight</div>
+                        </div>
+                    )}
+                </div>
 
                 {/* 탭 내용 영역 */}
-                {/* 탭 내용 영역 */}
-                <div className="overflow-y-auto w-[380px] h-[calc(100%-25.67px)] left-[3.50px] top-[25.67px] absolute bg-white shadow-[-5px_0px_15px_rgba(0,0,0,0.02)]">
+                <div className="w-full h-[calc(610px-36px)] bg-white/60 backdrop-blur-xl border border-white/30 shadow-[0px_0px_10px_rgba(0,0,0,0.08)] rounded-[20px] overflow-y-auto scrollbar-hide relative">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                    
                     {activeTab === 'standard' ? (
-                        <>
-                            {/* --- Standard View --- */}
-{/* Today Mood 섹션 */}
-<div className="w-full h-[111px] left-[0px] top-[0px] absolute overflow-hidden">
-    <div className="left-[15px] top-[25px] absolute text-center justify-start text-black text-2xl font-normal font-['Archivo'] leading-5">Today Mood</div>
-    
-    <div className="flex left-[17px] top-[55px] h-12 absolute justify-between w-full items-center pr-8">
-        {['delight', 'happy', 'soso', 'angry', 'sad'].map(mood => (
-            <img key={mood} className={`h-10 w-auto ${data.standard.mood === mood ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/emotion_new/${mood}.png`} alt={mood} onError={(e) => e.target.style.display='none'} />
-        ))}
-    </div>
-    {/* 📏 가로 경계선: w-[92%] 부분을 수정하여 길이 조절 가능 */}
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[92%] h-[1px] bg-gray-300/50" />
-</div>
+                        <div className="p-5 flex flex-col gap-8">
+                            {/* Today Mood */}
+                            <div className="space-y-4">
+                                <div className="text-black text-xl font-normal font-['Archivo']">Today Mood</div>
+                                <div className="flex justify-between items-center px-2">
+                                    {['delight', 'happy', 'soso', 'angry', 'sad'].map(mood => (
+                                        <img key={mood} className={`h-9 w-auto transition-all ${data.standard.mood === mood ? 'opacity-100 scale-125 drop-shadow-md' : 'opacity-20'}`} src={`/emotion_new/${mood}.png`} alt={mood} />
+                                    ))}
+                                </div>
+                                <div className="w-full h-[1px] bg-gray-300/40" />
+                            </div>
 
-{/* Weather 섹션 */}
-<div className="w-full h-[118px] left-[0px] top-[110px] absolute overflow-hidden">
-    <div className="left-[15px] top-[25px] absolute text-center justify-start text-black text-2xl font-normal font-['Archivo'] leading-5">Weather</div>
-    
-    <div className="flex left-[17px] right-[17px] top-[65px] h-12 absolute justify-between w-auto items-center">
-        {['sun', 'cloud', 'dark', 'rain', 'snow'].map(weather => (
-            <img key={weather} className={`h-10 w-auto ${data.standard.weather === weather ? 'opacity-100 scale-110' : 'opacity-30'}`} src={`/weather/${weather}.png`} alt={weather} onError={(e) => e.target.style.display='none'} />
-        ))}
-    </div>
-    {/* 📏 가로 경계선 */}
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[92%] h-[1px] bg-gray-300/50" />
-</div>
+                            {/* Weather */}
+                            <div className="space-y-4">
+                                <div className="text-black text-xl font-normal font-['Archivo']">Weather</div>
+                                <div className="flex justify-between items-center px-2">
+                                    {['sun', 'cloud', 'dark', 'rain', 'snow'].map(weather => (
+                                        <img key={weather} className={`h-9 w-auto transition-all ${data.standard.weather === weather ? 'opacity-100 scale-125' : 'opacity-20'}`} src={`/weather/${weather}.png`} alt={weather} />
+                                    ))}
+                                </div>
+                                <div className="w-full h-[1px] bg-gray-300/40" />
+                            </div>
 
-{/* Timestamp 섹션 */}
-<div className="w-full h-[114px] left-[0px] top-[220px] absolute overflow-hidden">
-    <div className="left-[15px] top-[25px] absolute text-center text-black text-2xl font-normal font-['Archivo'] leading-5">Timestamp</div>
-   
-    <div className="flex h-14 items-center justify-between top-[52px] absolute left-[15px] right-[15px]">
-        <div className="w-[200px] h-[37px] bg-zinc-300/30 rounded-[10px] flex items-center justify-center">
-            <span className="text-black text-2xl font-normal font-['Archivo'] leading-none">{data.standard.date}</span>
-        </div>
-        <div className="px-4 h-[37px] w-[140px] bg-zinc-300/30 rounded-[10px] flex items-center justify-center">
-            <span className="text-black text-2xl font-normal font-['Archivo'] leading-none">{data.standard.time}</span>
-        </div>
-    </div>
-    {/* 📏 가로 경계선 */}
-    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[92%] h-[1px] bg-gray-300/50" />
-</div>
+                            {/* Timestamp */}
+                            <div className="space-y-4">
+                                <div className="text-black text-xl font-normal font-['Archivo']">Timestamp</div>
+                                <div className="flex flex-col gap-2">
+                                    <div className="w-full h-10 bg-zinc-400/10 rounded-[10px] flex items-center justify-center font-['Archivo'] text-lg">{data.standard.date}</div>
+                                    <div className="w-full h-10 bg-zinc-400/10 rounded-[10px] flex items-center justify-center font-['Archivo'] text-lg">{data.standard.time}</div>
+                                </div>
+                                <div className="w-full h-[1px] bg-gray-300/40" />
+                            </div>
 
-{/* Tags 섹션 */}
-<div className="w-full h-[110px] left-[0px] top-[calc(220px+105px)] absolute overflow-hidden">
-    <div className="left-[15px] top-[25px] absolute text-center text-black text-2xl font-normal font-['Archivo'] leading-5">Tags</div>
-
-    <div className="w-[calc(100%-30px)] flex h-14 items-center left-[15px] right-[15px] top-[52px] relative">
-        <div className="flex-1 max-w-[100%] h-11 bg-gray-300/30 rounded-[10px] flex items-center justify-start px-3 gap-2 overflow-x-auto scrollbar-hide">
-            {data.standard.tags
-                .filter(tag => tag !== 'unsorted') 
-                .map((tag, index) => (
-                    <div key={index} className="bg-[#BFB0EF] rounded-[5px] w-auto h-[25px] flex items-center justify-center px-2 gap-1 whitespace-nowrap">
-                        <span className="text-neutral-600 text-sm font-normal font-['Archivo']">{tag}</span>
-                    </div>
-                ))
-            }
-        </div>
-    </div>
-    
-</div>
-                        </>
+                            {/* Tags */}
+                            <div className="space-y-4">
+                                <div className="text-black text-xl font-normal font-['Archivo']">Tags</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {data.standard.tags.filter(tag => tag !== 'unsorted').map((tag, idx) => (
+                                        <div key={idx} className="bg-[#BFB0EF]/60 px-3 py-1 rounded-full text-sm text-neutral-700 font-['Archivo']"># {tag}</div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     ) : (
-                        /* --- Insight View (activeTab === 'insight'일 때 실행) --- */
-                        <div className="w-full scrollbar-hide min-h-full flex flex-col items-center pt-[12px] relative">
-                            <div className="w-80 h-auto flex flex-col items-center gap-6 pb-10">
+                        <div className="p-5 flex flex-col gap-6 items-center">
+                            <div className="scrollbar-hide w-80 h-auto flex flex-col items-center gap-6 pb-10">
                                 {/* [1] Header */}
                                 <div className="w-[340px] h-14 flex items-center justify-center relative shrink-0">
-                                    <div className="w-[295px] h-8 left-[38px] top-[17px] absolute bg-gray-200 rounded-tr-[50px] rounded-br-[50px]" />
+                                    <div className="w-[295px] h-8 left-[38px] top-[17px] absolute bg-[#303030] rounded-tr-[50px] rounded-br-[50px]" />
                                     <img className="w-14 h-12 left-[3px] top-[3px] absolute" src="/2_writepage/face.png" alt="face" />
-                                    <div className="left-[57px] top-[24px] absolute text-center text-black text-xl font-normal font-['Archivo'] leading-5">What does this writing reveal?</div>
+                                    <div className="left-[57px] top-[24px] absolute text-center text-white text-xl font-normal font-['Archivo'] leading-5">What does this writing reveal?</div>
                                 </div>
                                 
                                 {/* [2] Theme */}
                                 <div className="w-80 flex flex-col items-center relative">
                                     <div className="w-full text-left text-black text-2xl font-normal font-['Archivo'] mb-[5px]">Theme</div>
-                                    <div className="w-80 h-auto bg-gray-200 flex items-center justify-center rounded-[5px] p-4">
+                                    <div className="w-80 h-auto bg-[#d7d7d7] flex items-center justify-center rounded-[5px] p-4">
                                         <div className="text-center text-black text-xl font-normal font-['Archivo'] leading-tight break-keep">“{data.insight.theme}”</div>
                                     </div>
                                 </div>
@@ -868,7 +854,7 @@ export default function ExplorePage() {
 
     return (
         // 전체 배경 및 레이아웃 컨테이너
-        <div className="w-full h-screen bg-gradient-to-b from-lime-200/40 via-emerald-200/40 to-emerald-300/40 m-0 p-0 overflow-hidden relative flex">
+        <div className="w-full h-screen bg-[linear-gradient(150deg,_rgba(228,230,231,0.8),_rgba(223,238,221,0.8),_rgba(194,232,186,0.8),_rgba(180,252,177,0.8))] m-0 p-0 overflow-hidden relative flex">
             
             {/* [왼쪽 상태창 - 사이드바] */}
             {/* isSidebarOpen 상태에 따라 화면에 나타남 */}

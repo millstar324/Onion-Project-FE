@@ -344,12 +344,16 @@ export default function ReportPage() {
 
             // 🌟 2. 키워드 데이터 저장 (여기서 setKeywordData를 사용합니다!)
             if (data.ai_trait_counts) {
-                const formattedKeywords = Object.entries(data.ai_trait_counts).map(([text, count]) => ({
-                    text: text,
-                    count: count
-                }));
+                const formattedKeywords = Object.entries(data.ai_trait_counts)
+                    .map(([text, count]) => ({
+                        text: text,
+                        count: count
+                    }))
+                    // 🌟 1. 빈도수(count)가 높은 순서대로 정렬
+                    .sort((a, b) => b.count - a.count)
+                    // 🌟 2. 상위 10개만 선택
+                    .slice(0, 20);
                 
-                // 🚀 바로 여기서 호출! 이렇게 하면 'never read' 경고가 사라집니다.
                 setKeywordData(formattedKeywords); 
             }
             // ... 키워드 데이터 처리 동일
@@ -416,20 +420,14 @@ export default function ReportPage() {
     
 
     return (
-        <div className="w-full h-screen bg-[linear-gradient(150deg,_rgba(182,213,233,0.37),_rgba(191,205,229,0.37),_rgba(196,200,227,0.37),_rgb(201,196,225,0.37))] m-0 p-0 overflow-hidden relative flex">
-            
-            {/* [사이드 배너 버튼] */}
-            <div 
-                onClick={() => setIsNavOpen(true)}
-                className="fixed right-0 top-[5vh] w-14 h-16 flex items-center justify-center z-[60] cursor-pointer group"
-            >
-                <div className="w-14 h-16 bg-zinc-800 rounded-tl-[20px] rounded-bl-[20px] flex items-center justify-center shadow-lg group-hover:w-16 transition-all">
-                    <div className="w-9 h-9 flex items-center justify-center">
-                        <User size={30} color="white" />
-                    </div>
-                </div>
+        <div className="w-screen h-screen bg-container_purple bg-[linear-gradient(150deg,_rgba(228,223,237,0.8),_rgba(227,221,238,0.8),_rgba(215,198,246,0.8),_rgb(218,187,250,0.8))] m-0 p-0 overflow-hidden relative flex items-center justify-center">
+        
+        {/* [사이드 배너 버튼] */}
+        <div onClick={() => setIsNavOpen(true)} className="fixed right-0 top-[5vh] w-14 h-16 flex items-center justify-center z-[60] cursor-pointer group">
+            <div className="w-14 h-16 bg-zinc-800 rounded-tl-[20px] rounded-bl-[20px] flex items-center justify-center shadow-lg group-hover:w-16 transition-all">
+                <div className="w-9 h-9 flex items-center justify-center"><User size={30} color="white" /></div>
             </div>
-
+        </div>
             {/* [확장되는 메뉴 박스] */}
             {isNavOpen && (
                 <>
@@ -490,273 +488,254 @@ export default function ReportPage() {
                 </>
             )}
             {/* --- 🌟 뷰 전환 화살표 버튼 (오른쪽 끝) --- */}
-            <button 
-                onClick={() => setViewMode(viewMode === 'stats' ? 'onion' : 'stats')}
-                className="fixed right-4 top-1/2 -translate-y-1/2 z-50 p-4 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all shadow-xl group"
-            >
-                {viewMode === 'stats' ? <ChevronRight size={40} className="group-hover:translate-x-1 transition-transform" /> : <ChevronLeft size={40} className="group-hover:-translate-x-1 transition-transform" />}
-            </button>
+            <button onClick={() => setViewMode(viewMode === 'stats' ? 'onion' : 'stats')} className="fixed right-4 top-1/2 -translate-y-1/2 z-50 p-4 bg-white/20 hover:bg-white/40 rounded-full backdrop-blur-md transition-all shadow-xl group">
+            {viewMode === 'stats' ? <ChevronRight size={40} className="group-hover:translate-x-1 transition-transform" /> : <ChevronLeft size={40} className="group-hover:-translate-x-1 transition-transform" />}
+        </button>
 
             
             {/* --- [A] 일반 통계 모드 (Stats View) --- */}
-            {viewMode === 'stats' && (
-                <>
-                    {/* 왼쪽 나무 카드 */}
-                    <div className="w-[45%] h-full flex flex-col items-center justify-center overflow-hidden animate-in fade-in slide-in-from-left duration-700">
-
-                        <div className="z-20 w-[532px] flex-col p-3 mb-1 top-[64px] absolute bg-cyan-100/25 rounded-[100px] shadow-[0px_3px_4px_0px_rgba(53,52,52,0.25)] outline outline-[1.40px] outline-white/40 inline-flex justify-center items-center gap-4">
-                            <div className="text-black text-2xl font-normal font-['Archivo']">A Tree of New Beginnings</div>
-                            
-                        </div>
-                        
-                        {/* --- 나무 렌더링 부분 --- */}
-                        <div className="w-full h-full bg-transparent cursor-grab active:cursor-grabbing">
-                            <Canvas shadows camera={{ position: [0, 5, 28], fov: 45 }} gl={{ antialias: true }}>
-                                <OrbitControls makeDefault target={[0, 8.5, 0]} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} enableZoom={false} enablePan={false} />
-                                {/* 🌟 big5Scores를 프롭으로 넘겨줍니다. */}
-                                <Suspense fallback={null}>
-                                    {big5Scores && <TreeOnly big5_scores={big5Scores} service_days={serviceDays} mood_stats={flower}/>}
-                                </Suspense>
-                                <ambientLight intensity={0.8} />
-                                <pointLight position={[10, 10, 10]} intensity={1.5} castShadow />
-                            </Canvas>
-                        </div>
+        {viewMode === 'stats' && (
+            <div className="w-[96vw] h-[92vh] flex flex-row items-stretch justify-center gap-4 animate-in fade-in slide-in-from-left duration-700">
+                
+                {/* [1] 왼쪽 나무 카드: 너비 45% -> 50% 확장 */}
+                <div className="flex-1 h-full relative  overflow-hidden  ">
+                    <div className="absolute  opacity-80
+                    /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                    bg-white/10 backdrop-blur-xl 
+                    /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                    border-x border-white/40 
+                    /* 🌟 입체감: 은은한 그림자 */
+                    shadow-[10px_0_30px_rgba(0,0,0,0.05)] rounded-full
+                    top-8 left-1/2 -translate-x-1/2 z-20 px-8 py-3 ">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none rounded-full" />
+                        <span className=" text-black text-2xl opacity-100 font-normal font-['Archivo']">Mind Tree</span>
                     </div>
+                    <div className="w-full h-full cursor-grab active:cursor-grabbing">
+                        <Canvas shadows camera={{ position: [0, 5, 33], fov: 45 }} gl={{ antialias: true }}>
+                            <OrbitControls makeDefault target={[0, 8.5, 0]} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} enableZoom={false} enablePan={false} />
+                            <Suspense fallback={null}>
+                                {big5Scores && <TreeOnly big5_scores={big5Scores} service_days={serviceDays} mood_stats={flower}/>}
+                            </Suspense>
+                            <ambientLight intensity={0.8} />
+                            <pointLight position={[10, 10, 10]} intensity={1.5} castShadow />
+                        </Canvas>
+                    </div>
+                </div>
 
-                    {/* 오른쪽 정보 카드 컨테이너 */}
-                    
-                    {/* 🌟 pr-20을 주어 스크린 오른쪽 끝과 확실한 거리를 두었습니다. */}
-                    <div className="w-[55%] h-full flex flex-col items-start justify-center pl-4 pr-20 py-12 animate-in fade-in slide-in-from-right duration-700 overflow-hidden">
+                {/* [2] 오른쪽 정보 컨테이너: 너비 55% -> 50% 및 내부 유동적 배치 */}
+                <div className="flex-1 h-full flex flex-col justify-between py-4 pr-12 pl-4 overflow-hidden">
+                    <div className="flex flex-col gap-4 w-full h-full">
                         
-                        {/* 내부 레이아웃 래퍼 */}
-                        <div className="flex flex-col gap-5 w-full h-full max-w-[720px]">
-                            
-                            {/* --- 상단 섹션: Tree Age (비중 확대) & Mood --- */}
-                            {/* flex-[1.2]로 높이 비율 유지 */}
-                            <div className="flex flex-row items-stretch justify-between w-full gap-4 flex-[1.2] min-h-0">
+                        {/* 상단 섹션: Tree Age & Mood (높이 비율 4:6) */}
+                        <div className="flex flex-row gap-4 h-[35%] w-full">
+                            {/* Tree Age 박스 */}
+                            <div className="flex-[0.8] rounded-[30px] p-6 relative 
+                            /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                            bg-white/20 backdrop-blur-xl 
+                            /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                            border-x border-white/40 
+                            /* 🌟 입체감: 은은한 그림자 */
+                            shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                            flex flex-col overflow-hidden">
+                                <div className="absolute inset-0 rounded-[30px] bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
                                 
-                                {/* [1] Tree Age: 박스를 꽉 채우는 압도적인 숫자 크기 */}
-                                <div className="w-[40%] flex flex-col justify-center bg-zinc-500/10 rounded-[30px] shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-6 relative overflow-hidden">
-                                    {/* 🌟 타이틀: 왼쪽 상단 고정 */}
-                        <div className="text-neutral-500 text-xs font-bold font-['Archivo'] uppercase tracking-widest absolute top-6 left-6">
-                            Tree Age
-                        </div>
-                        
-                        {/* 🌟 숫자와 텍스트를 한 줄(flex-row)로 묶고 오른쪽 정렬(justify-end) */}
-                        <div className="translate-y-5 flex flex-row items-baseline justify-end w-full gap-2 mb-1 pr-2">
-                            {/* 나이 숫자: 압도적인 크기 유지 */}
-                            <div className="text-black text-[clamp(5rem,13vh,8.5rem)] font-normal font-['Archivo'] leading-none tracking-tighter drop-shadow-sm">
-                                {treeAge}
+                                {/* 1. 타이틀: 왼쪽 상단 (기본 padding p-6에 의해 자동 위치) */}
+                                <div className="text-neutral-800 text-lg font-bold font-['Archivo'] flex items-center gap-2 z-10">
+                                    <Sparkles size={18} className="text-emerald-600" /> 
+                                    Tree Age
+                                </div>
+                            
+                                {/* 2. 나이 정보 영역: 가로 중앙 정렬 및 하단 20% 위치 */}
+                                <div 
+                                    className="absolute  left-1/2 -translate-x-1/2 translate-y-1/2 flex items-baseline gap-2 whitespace-nowrap"
+                                    style={{top: '5%' }} 
+                                >
+                                    {/* 숫자 크기는 조나단이 설정한 시원한 clamp 유지 */}
+                                    <span className="text-black text-[clamp(4rem,10vw,7.5rem)] font-normal font-['Archivo'] leading-none tracking-tighter">
+                                        {treeAge}
+                                    </span>
+                                    <span className="text-neutral-600 text-lg font-['Archivo'] font-medium opacity-80 pb-2">
+                                        days old
+                                    </span>
+                                </div>
+                            
                             </div>
                             
-                            {/* days old: 숫자 옆에 나란히 위치 */}
-                            <div className="text-neutral-600 text-lg font-['Archivo'] font-medium opacity-80 whitespace-nowrap pb-1">
-                                days old
-                            </div>
-                        </div>
+                            {/* Mood Trends */}
+                            <div className="flex-[1.2] rounded-[30px]  p-5 flex 
+                            /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                            bg-white/20 backdrop-blur-xl 
+                            /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                            border-x border-white/40 
+                            /* 🌟 입체감: 은은한 그림자 */
+                            shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                            flex-col">
+                                <div className="absolute inset-0 rounded-[30px] bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                                <div className="flex justify-between items-center mb-2">
+                                <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-2 flex items-center gap-2 z-10"><Sparkles size={18} className="text-emerald-600" /> Mood Trends</div>
+                                    <button onClick={cycleMoodScope} className="px-3 py-1 bg-zinc-800/10 hover:bg-zinc-800/20 rounded-full flex items-center gap-1.5 text-[10px] font-bold text-neutral-700 transition-all">
+                                        <RotateCw size={12} /> <span>{moodScope.toUpperCase()}</span>
+                                    </button>
                                 </div>
-                    
-                                {/* [2] Mood Stats */}
-                                <div className="flex-1 flex flex-col bg-zinc-500/10 rounded-[30px] shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-5">
-                                    <div className="flex justify-between items-center mb-2 shrink-0">
-                                        <div className="text-neutral-700 text-lg font-['Archivo'] font-bold">Mood Trends</div>
-                                        <button 
-                                            onClick={cycleMoodScope}
-                                            className="px-2.5 py-1 bg-zinc-800/10 hover:bg-zinc-800/20 rounded-full transition-all flex items-center gap-1.5 text-[10px] font-bold text-neutral-700"
-                                        >
-                                            <RotateCw size={12} /> 
-                                            <span>{moodScope.toUpperCase()}</span>
-                                        </button>
-                                    </div>
-                    
-                                    <div className="flex flex-row items-end justify-between flex-1 min-h-0 pt-2">
-                                        <div className="flex justify-around items-end h-full w-[60%] pb-1 gap-2 border-b border-zinc-400/20">
-                                            {currentMoodStats.map((item, i) => (
-                                                <div key={i} className="flex flex-col items-center gap-1 flex-1 max-w-[22px] h-full justify-end">
-                                                    <div 
-                                                        className={`w-full bg-gradient-to-b ${item.color} rounded-t-full transition-all duration-1000 ease-out shadow-sm`} 
-                                                        style={{ height: `${Math.max((item.count / maxMoodCount) * 100, 8)}%` }} 
-                                                    />
-                                                    <span className="text-[9px] text-neutral-500 font-black">{item.key[0].toUpperCase()}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        
-                                        <div className="flex flex-col justify-center gap-1 text-neutral-800 text-[10px] items-end font-['Archivo'] font-medium h-full pr-2">
-                                            {currentMoodStats.map((item, i) => (
-                                                <div key={i} className="flex items-center gap-2 opacity-90">
-                                                    <span>{item.label}</span>
-                                                    <span className="w-4 text-right font-bold text-emerald-700">{item.count}</span>
-                                                    <div className={`w-2 h-2 rounded-full bg-gradient-to-br ${item.color} shadow-sm`} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                    
-                            {/* --- 중간 섹션: Tag Stats (비중 축소) --- */}
-                            {/* flex-[0.8]로 낮게 설정하여 키워드 박스에 공간 양보 */}
-                            <div className="w-full bg-zinc-500/10 rounded-[30px] shadow-lg outline outline-[0.75px] outline-white/40 backdrop-blur-3xl p-5 flex-[0.8] flex flex-col min-h-0">
-                                <div className="text-neutral-700 text-sm font-bold font-['Archivo'] mb-3 flex items-center gap-2">
-                                    <div className="w-1 h-3.5 bg-emerald-500 rounded-full"></div>
-                                    Monthly Tags
-                                </div>
-                                <div className="grid grid-cols-3 gap-x-8 gap-y-3 flex-1 items-center">
-                                    {tagData.slice(0, 6).map((tag, i) => (
-                                        <div key={i} className="flex flex-col gap-1">
-                                            <div className="flex justify-between text-[11px] font-['Archivo'] font-bold">
-                                                <span className="text-neutral-700 truncate"># {tag.name}</span>
-                                                <span className="text-emerald-600">{tag.count}</span>
-                                            </div>
-                                            <div className="w-full h-1.5 bg-white/30 rounded-full overflow-hidden">
-                                                <div className={`h-full ${tag.color || 'bg-blue-400'} rounded-full transition-all duration-1000`} style={{ width: `${(tag.count / maxTagCount) * 100}%` }} />
-                                            </div>
+                                <div className="flex-1 flex items-end justify-around pb-2 gap-2">
+                                    {currentMoodStats.map((item, i) => (
+                                        <div key={i} className="flex flex-col items-center gap-1 h-full justify-end flex-1">
+                                            <div className={`w-full max-w-[30px] bg-gradient-to-b ${item.color} rounded-t-full shadow-sm transition-all duration-1000 ease-out`} style={{ height: `${Math.max((item.count / maxMoodCount) * 100, 10)}%` }} />
+                                            <span className="text-[10px] text-neutral-600 font-bold">{item.key.slice(0,3).toUpperCase()}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                    
-                            {/* --- 하단 섹션: Keyword Stats (가장 넓은 공간 할당, 글자 크기 최적화) --- */}
-                    <div className="w-full flex-[1.5] bg-zinc-500/20 rounded-[30px] shadow-xl outline outline-[1px] outline-white/50 backdrop-blur-3xl p-6 flex flex-col min-h-0 border-t border-white/20">
-                        <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-3 tracking-tight flex items-center gap-2 shrink-0">
-                            <Sparkles size={18} className="text-emerald-600" />
-                            Discovery Keywords
                         </div>
+
+                        {/* 중간 섹션: Monthly Tags (높이 25%) */}
+                        <div className="h-[25%] rounded-[30px]  p-6 
+                        /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                        bg-white/20 backdrop-blur-xl 
+                        /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                        border-x border-white/40 
+                        /* 🌟 입체감: 은은한 그림자 */
+                        shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                        flex flex-col min-h-0">
+                            <div className="absolute inset-0 rounded-[30px] bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+    
+                            {/* 타이틀 영역 */}
+                            <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-2 flex items-center gap-2 z-10"><Sparkles size={18} className="text-emerald-600" /> Monthly Tags</div>
                         
-                        {/* 🌟 글자 짤림 방지를 위해 gap 조절 및 폰트 크기 축소 */}
-                        <div className="flex-1 relative flex flex-wrap justify-center items-center gap-x-5 gap-y-3 overflow-hidden content-center px-2">
-                            {keywordData.length > 0 ? keywordData.map((kw, i) => {
-                                // 🌟 폰트 크기 범위를 (14px ~ 26px)로 줄여서 박스 안에 쏙 들어오게 함
-                                const fontSize = maxKwCount === minKwCount 
-                                    ? 18 
-                                    : ((kw.count - minKwCount) / (maxKwCount - minKwCount)) * (26 - 14) + 14;
-                                
+                            {/* 🌟 태그 리스트: 개수에 따라 grid 열(cols)을 유동적으로 조절 */}
+                            {(() => {
+                                const visibleTags = tagData
+                                    .filter(tag => tag.count > 0) // 0보다 큰 것만 통과
+                                    .slice(0, 6);                 // 그 중 상위 6개만 선택
+                        
                                 return (
-                                    <div key={i} className="cursor-default transition-all duration-500 hover:scale-110 hover:text-emerald-700 text-neutral-700 font-['Archivo'] font-semibold whitespace-nowrap"
-                                        style={{
-                                            fontSize: `${fontSize}px`,
-                                            animation: `floating ${3 + (i % 2)}s ease-in-out infinite`,
-                                            animationDelay: `${i * 0.2}s`,
-                                            opacity: 0.7 + (kw.count / maxKwCount) * 0.3,
-                                            lineHeight: 1.1
-                                        }}>
-                                        {kw.text}
+                                    <div className={`flex-1 grid gap-x-10 min-h-0 
+                                        content-center /* 🌟 내용물을 수직 중앙에 예쁘게 모아줍니다 */
+                                        ${/* 🌟 2. 필터링된 개수(visibleTags.length)를 기준으로 그리드 모양 결정 */
+                                          visibleTags.length <= 2 ? 'grid-cols-1' : 
+                                          visibleTags.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'}
+                                    `}>
+                                        {visibleTags.map((tag, i) => (
+                                            <div 
+                                                key={i} 
+                                                className={`flex flex-col justify-center transition-all duration-500 ${
+                                                    visibleTags.length <= 3 ? 'gap-1' : 'gap-0.5'
+                                                }`}
+                                            >
+                                                <div className="flex justify-between items-baseline px-1">
+                                                    <span className="text-neutral-800  text-[clamp(0.5rem,1vw,1.2rem)] font-normal font-['Archivo'] truncate">
+                                                        # {tag.name}
+                                                    </span>
+                                                    <span className="text-emerald-600 text-sm font-normal font-['Archivo']">
+                                                        {tag.count}
+                                                    </span>
+                                                </div>
+                        
+                                                <div className="w-full h-2.5 bg-white/30 rounded-full overflow-hidden shadow-inner border border-white/20">
+                                                    <div 
+                                                        className={`h-full ${tag.color} rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(255,255,255,0.2)]`} 
+                                                        style={{ width: `${(tag.count / maxTagCount) * 100}%` }} 
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                        
+                                        {/* 🌟 3. 데이터가 없거나, 있더라도 모두 0개라서 visibleTags가 비어있을 때 메시지 출력 */}
+                                        {visibleTags.length === 0 && (
+                                            <div className="col-span-full text-center text-neutral-400 italic text-sm">
+                                                No active tags this month.
+                                            </div>
+                                        )}
                                     </div>
                                 );
-                            }) : (
-                                <div className="text-neutral-400 italic text-sm">No keywords discovered yet.</div>
-                            )}
+                            })()}
                         </div>
-                    </div>
-                        </div>
-                    </div>
-                </>
-            )}
 
-
-            {/* --- [B] 🌟 양파 분석 모드 (Onion View) --- */}
-            {/* --- [B] 🌟 양파 분석 모드 --- */}
-            {viewMode === 'onion' && (
-                <div className="w-full h-full flex flex-col items-center justify-start pt-32 relative animate-in fade-in zoom-in duration-700">
-                    {/* 🌟 텍스트 섹션: pt-32로 전체적으로 내리고, mb-4로 양파와 간격을 좁혔습니다. */}
-                    <div className="text-center mb-4 z-30 pointer-events-none transition-all">
-                        <h2 className="text-5xl font-bold text-neutral-800 mb-3 font-['Archivo'] tracking-tight">Deep Core Analysis</h2>
-                        <p className="text-neutral-600 text-lg font-['Archivo'] opacity-80">
-                        Peel back another layer of your inner self. ({usageCount}/{usageLimit})
-                        </p>
-                    </div>
-    
-                    {/* 🌟 겹쳐진 양파 컨테이너 */}
-                    <div 
-                        className="relative w-[600px] h-[550px] mt-[-100px] flex items-center justify-center"
-                        style={{ cursor: 'default' }} 
-                    >
-                        {/* 1. 아래쪽: 양파 본체 */}
-                        {console.log("onstage", onionStage)}
-                        <img 
-                            ref={onionRef}
-                            src={`/onions/onion_stage_${onionStage}.png`} 
-                            alt="Onion" 
-                            // 🌟 이벤트 핸들러 연결
-                            onMouseMove={handleOnionMouseMove}
-                            onMouseLeave={handleOnionMouseLeave}
-                            onClick={handleCompositeClick}
-                            
-                            // 🌟 isOnionHovered 상태에 따라 효과 적용
-                            // 기존 CSS hover:scale-105를 제거하고 아래와 같이 작성합니다.
-                            className={`absolute w-[480px] h-[480px] object-contain transition-all duration-500 z-10 cursor-pointer
-                                ${isPeeling ? 'animate-shake scale-110' : ''}
-                                ${!isPeeling && isOnionHovered ? 'scale-[1.03] brightness-105' : 'scale-100 brightness-100'}
-                                ${!isPeeling && !isOnionHovered ? 'grayscale-[0.1]' : 'grayscale-0'} 
-                                ${onionStage === 3 ? 'opacity-50' : ''}
-                            `}
-                            crossOrigin="anonymous"
-                        />
-    
-                        {/* 2. 위쪽: 양파 껍질 (Stage 1부터 등장) */}
-                        {/* 2. 위쪽: 양파 껍질 */}
-                        {onionStage > 0 && !isPeeling && (
-                            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                                <div className="relative pointer-events-auto">
-                                    <img 
-                                        ref={peelRef}
-                                        src={`/onions/peel_stage_${onionStage}.png`} 
-                                        alt="Peel" 
-                                        onMouseMove={handlePeelMouseMove}
-                                        onMouseLeave={handlePeelMouseLeave}
-                                        onClick={handleCompositeClick}
-                                        
-                                        className={`w-[280px] h-[280px] object-contain drop-shadow-xl transition-all duration-300 cursor-pointer 
-                                            ${isPeelHovered ? 'brightness-110 drop-shadow-2xl' : 'brightness-100'}
-                                        `}
-                                        style={{ 
-                                            // 🌟 1단계에서 정한 기본 위치 + 호버 시 scale 효과 결합
-                                            transform: `${currentPeelStyle.img} ${isPeelHovered ? 'scale(1.1)' : 'scale(1.0)'}` 
-                                        }}
-                                        crossOrigin="anonymous"
-                                    />
-                                    
-                                    {/* 🌟 라벨 위치도 단계별로 동적 적용 */}
-                                    <div 
-                                        className={`absolute pointer-events-none select-none transition-all duration-300
-                                            ${isPeelHovered ? 'opacity-100 translate-y-[-5px]' : 'opacity-80'}
-                                        `}
-                                        style={{ 
-                                            transform: `${currentPeelStyle.label} ${isPeelHovered ? 'scale(1.1)' : 'scale(1.0)'}` 
-                                        }}
-                                    >
-                                        <span className="bg-emerald-600 text-white text-[11px] px-3 py-1.5 rounded-full font-bold shadow-lg uppercase tracking-wider">
-                                            Past Report
+                        {/* 하단 섹션: Discovery Keywords (높이 40% - 가장 넓게) */}
+                        <div className="flex-1 rounded-[30px] p-6 flex flex-col relative overflow-hidden
+                        /* 🌟 글래스모피즘 핵심: 반투명 배경 + 블러 */
+                        bg-white/20 backdrop-blur-xl 
+                        /* 🌟 거울 테두리 느낌: 밝은 선 추가 */
+                        border-x border-white/40 
+                        /* 🌟 입체감: 은은한 그림자 */
+                        shadow-[10px_0_30px_rgba(0,0,0,0.05)]
+                        ">
+                            <div className="absolute inset-0 rounded-[30px] bg-gradient-to-tr from-transparent via-white/10 to-white/30 pointer-events-none" />
+                            <div className="text-neutral-800 text-lg font-bold font-['Archivo'] mb-1 flex items-center gap-1 z-10"><Sparkles size={18} className="text-emerald-600" /> Discovery Keywords</div>
+                            {/* 🌟 키워드 유동적 배치: flex-wrap + justify-center + content-center */}
+                            <div className="flex-1 flex flex-wrap justify-center content-center gap-x-6 gap-y-3 z-10 p-2">
+                                {keywordData.length > 0 ? keywordData.map((kw, i) => {
+                                    const fontSize = maxKwCount === minKwCount ? 20 : ((kw.count - minKwCount) / (maxKwCount - minKwCount)) * (24 - 12) + 12;
+                                    return (
+                                        <span key={i} className="cursor-default hover:text-emerald-700 hover:scale-110 transition-all duration-300 font-['Archivo'] font-bold text-neutral-700/80"
+                                            style={{ fontSize: `${fontSize}px`, opacity: 0.6 + (kw.count / maxKwCount) * 0.4 }}>
+                                            {kw.text}
                                         </span>
-                                    </div>
-                                </div>
+                                    );
+                                }) : <div className="text-neutral-400 italic">No keywords found.</div>}
                             </div>
-                        )}
+                        </div>
+
                     </div>
-    
-                    {/* 🌟 분석 중일 때의 로딩 UI (위치 최적화) */}
-                    {isAnalyzing && (
-                        <div className="fixed inset-0 z-[1200] flex flex-col items-center justify-center bg-black/30 backdrop-blur-sm">
-                            <div className="mt-60 w-[450px] flex flex-col items-center gap-6 bg-white/90 p-8 rounded-[40px] shadow-2xl border border-white/50 animate-in slide-in-from-bottom-10 duration-500">
-                                <div className="flex items-center gap-4 w-full">
-                                    <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-                                    <div className="flex-1">
-                                        <h3 className="text-xl font-bold text-neutral-800 font-['Archivo']">Analyzing your core...</h3>
-                                        <div className="flex justify-between items-center mt-1">
-                                            <span className="text-sm text-neutral-500">Onion deep dive...</span>
-                                            <span className="text-emerald-600 font-bold font-mono">{Math.floor(progress)}%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="w-full h-2.5 bg-zinc-200 rounded-full overflow-hidden shadow-inner">
-                                    <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
+                </div>
+            </div>
+        )}
+
+
+            {/* --- [B] 양파 분석 모드 (Onion View) --- */}
+        {viewMode === 'onion' && (
+            // 🌟 justify-center, items-center로 화면 정중앙 배치
+            <div className="w-full h-full flex flex-col items-center justify-center relative animate-in fade-in zoom-in duration-700">
+                <div className="absolute text-center mb-8 top-[16vh] z-30 pointer-events-none">
+                    <h2 className="text-6xl font-bold text-neutral-800 mb-2 font-['Archivo'] tracking-tight drop-shadow-sm">Deep Core Analysis</h2>
+                    <p className="text-neutral-600 text-xl font-['Archivo']">Peel back another layer of your inner self. ({usageCount}/{usageLimit})</p>
+                </div>
+
+                <div className="relative w-[600px] h-[600px] flex items-center justify-center">
+                    <img 
+                        ref={onionRef}
+                        src={`/onions/onion_stage_${onionStage}.png`} 
+                        alt="Onion" 
+                        onMouseMove={handleOnionMouseMove}
+                        onMouseLeave={handleOnionMouseLeave}
+                        onClick={handleCompositeClick}
+                        className={`absolute w-[500px] h-[500px] object-contain transition-all duration-500 z-10 cursor-pointer ${isPeeling ? 'animate-shake scale-110' : ''} ${!isPeeling && isOnionHovered ? 'scale-[1.03] brightness-105' : 'scale-100 brightness-100'} ${!isPeeling && !isOnionHovered ? 'grayscale-[0.1]' : 'grayscale-0'} ${onionStage === 3 ? 'opacity-50' : ''}`}
+                        crossOrigin="anonymous"
+                    />
+                    
+                    {onionStage > 0 && !isPeeling && (
+                        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                            <div className="relative pointer-events-auto">
+                                <img 
+                                    ref={peelRef}
+                                    src={`/onions/peel_stage_${onionStage}.png`} 
+                                    alt="Peel" 
+                                    onMouseMove={handlePeelMouseMove}
+                                    onMouseLeave={handlePeelMouseLeave}
+                                    onClick={handleCompositeClick}
+                                    className={`w-[300px] h-[300px] object-contain drop-shadow-xl transition-all duration-300 cursor-pointer ${isPeelHovered ? 'brightness-110 drop-shadow-2xl' : 'brightness-100'}`}
+                                    style={{ transform: `${currentPeelStyle.img} ${isPeelHovered ? 'scale(1.1)' : 'scale(1.0)'}` }}
+                                    crossOrigin="anonymous"
+                                />
+                                <div className={`absolute pointer-events-none select-none transition-all duration-300 ${isPeelHovered ? 'opacity-100 translate-y-[-5px]' : 'opacity-80'}`} style={{ transform: `${currentPeelStyle.label} ${isPeelHovered ? 'scale(1.1)' : 'scale(1.0)'}` }}>
+                                    <span className="bg-emerald-600 text-white text-xs px-4 py-2 rounded-full font-bold shadow-lg uppercase tracking-wider">Past Report</span>
                                 </div>
                             </div>
                         </div>
                     )}
                 </div>
-            )}
+
+                {/* 로딩 바 */}
+                {isAnalyzing && (
+                    <div className="absolute bottom-20 w-[400px] flex flex-col items-center gap-2">
+                        <div className="w-full h-3 bg-zinc-200 rounded-full overflow-hidden shadow-inner">
+                            <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
+                        </div>
+                        <span className="text-emerald-700 font-bold font-mono">{Math.floor(progress)}%</span>
+                    </div>
+                )}
+            </div>
+        )}
 
             {/* --- 🌟 Life Map 리포트 모달 (오버레이) --- */}
             {isModalOpen && lifeMapReport && (

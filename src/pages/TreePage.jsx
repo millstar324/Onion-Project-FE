@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import api from '../api/axios'; // axios 인스턴스 import
 import { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { Sparkles } from "lucide-react";
 
 const menuItems = [
   { name: "Home", path: "/", icon: <HomeIcon size={20} /> },
@@ -151,6 +152,8 @@ export default function FullPage() {
 
     const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
+    const [isAutoMode, setIsAutoMode] = useState(false);
+
     // 🌟 로그아웃 함수 (다른 페이지와 동일하게 추가)
     const handleLogout = async () => {
         const result = await Swal.fire({
@@ -247,8 +250,24 @@ export default function FullPage() {
             </>
         )}
 
+        <button 
+            onClick={() => setIsAutoMode(!isAutoMode)}
+            className={`fixed bottom-10 left-10 z-[110] w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 shadow-2xl ${
+                isAutoMode 
+                ? 'bg-emerald-500 text-white scale-110' 
+                : 'bg-white/80 text-zinc-800 backdrop-blur-md hover:bg-white'
+            }`}
+            title="Cinematic Healing Mode"
+        >
+            <Sparkles className={isAutoMode ? "animate-pulse" : ""} size={28} />
+        </button>
+
         {/* 🌟 [수정] TreeScene에 'isWindy'라는 이름으로 재생 상태를 전달합니다. */}
-        <TreeScene className="w-full h-full" isWindy={isMusicPlaying} />
+        <TreeScene 
+            className="w-full h-full" 
+            isWindy={isMusicPlaying || isAutoMode} // 음악 재생 중이거나 힐링 모드일 때 바람 불게 함
+            isAutoMode={isAutoMode}                // 자동 시간/회전 모드 여부
+        />
 
         {/* 🌟 [NEW] 음악 플레이어 추가 */}
         <MusicPlayer isPlaying={isMusicPlaying} setIsPlaying={setIsMusicPlaying} />

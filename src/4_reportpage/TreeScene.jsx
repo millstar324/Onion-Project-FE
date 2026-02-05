@@ -329,7 +329,7 @@ const mapBig5ToTree = (stats, userId, serviceDays = 1, fullStats = null) => {
   // Stage 3: 오므라든 꽃 + 만개한 꽃 혼합 (20~39개)
   // Stage 4: 모두 만개 (40개 이상)
   const flowerStage = totalDiaries < 10 ? 1 : totalDiaries < 20 ? 2 : totalDiaries < 40 ? 3 : 4;
-  console.log("flowerStage: ", flowerStage);
+  // console.log("flowerStage: ", flowerStage);
   const growthFactor = 1 + Math.log10(serviceDays + 1) * 0.5;
   const maxDepth = Math.min(Math.floor(Math.sqrt(serviceDays / 3)) + 1, 4);
 
@@ -608,13 +608,13 @@ const AnimatedLeaf = ({ pos, rotation, geometry, color, isWindy, glowInt, index 
 
 
 AnimatedLeaf.propTypes = {
-  pos: PropTypes.instanceOf(THREE.Vector3).isRequired,
-  rotation: PropTypes.instanceOf(THREE.Vector3).isRequired,
+  pos: PropTypes.array.isRequired,      // instanceOf(THREE.Vector3) -> array
+  rotation: PropTypes.array.isRequired, // instanceOf(THREE.Vector3) -> array
   geometry: PropTypes.instanceOf(THREE.BufferGeometry).isRequired,
   color: PropTypes.string.isRequired,
   isWindy: PropTypes.bool.isRequired,
   glowInt: PropTypes.number.isRequired,
-  isNight: PropTypes.bool.isRequired,
+  isNight: PropTypes.bool.isRequired,   // 이 값은 이제 위 1번 수정으로 전달됩니다.
   index: PropTypes.number.isRequired,
 };
 
@@ -690,8 +690,8 @@ const AnimatedFlower = ({ pos, rotation, isFullBloom, layerCount, petalsPerLayer
 };
 
 AnimatedFlower.propTypes = {
-  pos: PropTypes.instanceOf(THREE.Vector3).isRequired,
-  rotation: PropTypes.instanceOf(THREE.Vector3).isRequired,
+  pos: PropTypes.array.isRequired,      // instanceOf(THREE.Vector3) -> array
+  rotation: PropTypes.array.isRequired, // instanceOf(THREE.Vector3) -> array
   isFullBloom: PropTypes.bool.isRequired,
   layerCount: PropTypes.number.isRequired,
   petalsPerLayer: PropTypes.number.isRequired,
@@ -700,7 +700,7 @@ AnimatedFlower.propTypes = {
   flowerColor: PropTypes.string.isRequired,
   isWindy: PropTypes.bool.isRequired,
   glowInt: PropTypes.number.isRequired,
-  isNight: PropTypes.bool.isRequired,
+  isNight: PropTypes.bool.isRequired,   // 이 값도 이제 전달됩니다.
   index: PropTypes.number.isRequired,
 };
 
@@ -811,16 +811,34 @@ LeafCluster.propTypes = {
   }).isRequired
 };
 
+
 // --- 메인 페이지 컴포넌트 (API 연동) ---
 
-export default function PsychologicalTreeScene({ isWindy }) {
+export default function PsychologicalTreeScene({ isWindy, isAutoMode }) {
   const [treeData, setTreeData] = useState({ stats: null, days: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [fullData, setFullData] = useState(null); // 🌟 전체 데이터를 담을 상태
+  
 
   // 🌟 시간 상태 (0~100)
   const [timeValue, setTimeValue] = useState(50); // 기본값: 낮(30)
+
+  useEffect(() => {
+    if (!isAutoMode) return;
+
+    let requestRef;
+    const animate = () => {
+      setTimeValue((prev) => {
+        const next = prev + 0.2; // 👈 여기서 시간 흐름 속도를 조절하세요 (0.05 ~ 0.1 추천)
+        return next > 100 ? 0 : next;
+      });
+      requestRef = requestAnimationFrame(animate);
+    };
+
+    requestRef = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(requestRef);
+  }, [isAutoMode]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -880,15 +898,17 @@ export default function PsychologicalTreeScene({ isWindy }) {
 
   // 🌟 슬라이더 값에 따라 모든 환경 변수를 부드럽게 계산
   const { bgGradient, ambientInt, sunInt, glowInt, sunColor } = getInterpolatedParams(timeValue);
-
+  
   const userId = localStorage.getItem('user_id') || 'guest';
   const treeParams = mapBig5ToTree(treeData.stats, userId, treeData.days, fullData);
   
-  // 🌟 params에 환경 정보 추가
+  // 🌟 [수정] params에 isNight 정보를 명시적으로 추가합니다.
   const animatedParams = { 
     ...treeParams, 
     isWindy,
-    glowInt // 잎과 꽃에 전달될 야광 플래그
+    glowInt,
+    // 30 미만(새벽)이거나 70 초과(저녁~밤)일 때 밤으로 판정
+    isNight: timeValue < 30 || timeValue > 70 
   };
 
   const dynamicDepth = treeData.days <= 10 ? 2 : treeData.days <= 30 ? 3 : 4;
@@ -901,85 +921,91 @@ export default function PsychologicalTreeScene({ isWindy }) {
 
 
   return (
-    // 🌟 배경 그라데이션 적용 (transition으로 부드럽게)
-    <div style={{ width: "100vw", height: "100vh", background: bgGradient }}>
+    <div style={{ width: "100vw", height: "100vh", background: bgGradient, transition: 'background 0.5s linear' }}>
       
-      {/* 🌟 시간 조절 슬라이더 UI */}
-      <div className="absolute top-10 left-10 z-50 bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20 flex flex-col gap-3 w-72 shadow-2xl animate-in slide-in-from-top-5 duration-700">
+      {/* 시간 슬라이더 UI (힐링 모드일 땐 반투명하게 처리) */}
+      <div className={`absolute top-10 left-10 z-50 bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20 flex flex-col gap-3 w-72 shadow-2xl transition-all duration-700 ${isAutoMode ? 'opacity-40 scale-95 pointer-events-none' : 'opacity-100'}`}>
         <div className="flex justify-between text-white font-bold px-1">
-            <Moon size={18} className="opacity-70"/>
-            <Sunrise size={18} className="opacity-70"/>
-            <Sun size={20} className="text-yellow-300"/>
-            <Sunset size={18} className="opacity-70"/>
-            <Moon size={18} className="opacity-70"/>
+            <Moon size={18}/> <Sunrise size={18}/> <Sun size={20} className="text-yellow-300"/> <Sunset size={18}/> <Moon size={18}/>
         </div>
-        
-        {/* 커스텀 슬라이더 스타일 */}
         <input 
-            type="range" 
-            min="0" 
-            max="100" 
-            step="0.5" // 🌟 부드러운 이동을 위해 소수점 스텝 추가
+            type="range" min="0" max="100" step="0.1"
             value={timeValue} 
             onChange={(e) => setTimeValue(Number(e.target.value))}
-            className="w-full h-2 bg-gradient-to-r from-indigo-900 via-sky-400 to-indigo-900 rounded-lg appearance-none cursor-pointer"
+            className="w-full h-2 bg-zinc-700/50 rounded-lg appearance-none cursor-pointer accent-white"
         />
-        
-        <div className="flex justify-between text-[10px] text-white/60 font-mono px-1">
-            <span>00:00</span>
-            <span>06:00</span>
-            <span>12:00</span>
-            <span>18:00</span>
-            <span>24:00</span>
-        </div>
       </div>
 
       <Canvas shadows camera={{ position: [0, 10, 25], fov: 45 }}>
-        <OrbitControls makeDefault target={[0, treeParams.treeScale * 1.2, 0]} minDistance={5} maxDistance={60} />
-        
-        {/* 🌟 계산된 조명 값 적용 */}
-        <ambientLight intensity={ambientInt} />
-        <directionalLight 
-            position={[10, 20, 10]} 
-            intensity={sunInt} 
-            color={sunColor}
-            castShadow 
-            shadow-bias={-0.0001}
-            shadow-mapSize={[2048, 2048]}
+        {/* 🌟 카메라 설정: 힐링 모드일 때 Z축 고정 자동 회전 */}
+                <OrbitControls 
+            makeDefault 
+            target={[0, (treeParams?.treeScale * 0.8 || 5) - 3, 0]} 
+            autoRotate={isAutoMode} 
+            
+            // 🌟 1. 속도를 20 이상으로 주되, 
+            autoRotateSpeed={10} 
+            
+            // 🌟 2. 감쇠(Damping)를 끄거나 아주 높여서 즉각 반응하게 합니다.
+            enableDamping={true} 
+            dampingFactor={0.15} // 기본값은 0.05입니다. 숫자가 클수록 덜 미끄러집니다.
+            
+            // 🌟 3. 회전 중 사용자가 마우스를 건드려도 멈추지 않게 하려면 (선택)
+            enablePan={false}
         />
         
-        {/* 밤이 깊을 때(glowInt가 높을 때)만 켜지는 달빛 포인트 조명 */}
+        <ambientLight intensity={ambientInt} />
+        <directionalLight position={[10, 20, 10]} intensity={sunInt} color={sunColor} castShadow />
+        
         {glowInt > 0.5 && (
             <pointLight position={[-15, 10, -5]} intensity={glowInt * 0.5} color="#6666ff" distance={50} />
         )}
 
         <Suspense fallback={null}>
+        <group position={[0, -6, 0]}>
           {treeParams && (
-            <RecursiveBranch
-              start={new THREE.Vector3(0, 0, 0)}
-              direction={new THREE.Vector3(0, 1, 0)}
-              length={treeParams.treeScale}
-              radius={dynamicRadius}
-              depth={dynamicDepth}
-              params={animatedParams} // glowInt 포함됨
-            />
+            <TreeGroupWrapper animatedParams={animatedParams}>
+                <RecursiveBranch
+                  start={new THREE.Vector3(0, 0, 0)}
+                  direction={new THREE.Vector3(0, 1, 0)}
+                  length={treeParams.treeScale}
+                  radius={dynamicRadius}
+                  depth={dynamicDepth}
+                  params={animatedParams}
+                />
+            </TreeGroupWrapper>
           )}
-
-          <Fireflies count={50} glowInt={glowInt} />
-          {/* 언덕 색상은 조명에 맡기거나, 밤에는 약간 어두운 톤으로 보정 */}
-          <NaturalHill 
-            color={glowInt > 0.5 ? "#2c3e50" : "#e2c6ab"} 
-            height={1.8} 
-            spread={20} 
-          />
+          <Fireflies count={isAutoMode ? 60 : 30} glowInt={glowInt} />
+          <NaturalHill color={glowInt > 0.5 ? "#1a1a2e" : "#e2c6ab"} height={1.8} spread={20} />
+        </group>
         </Suspense>
       </Canvas>
     </div>
   );
 }
 
+function TreeGroupWrapper({ children, animatedParams }) {
+  const groupRef = useRef();
+  useFrame((state) => {
+      if (!groupRef.current) return;
+      const t = state.clock.getElapsedTime();
+      if (animatedParams.isWindy) {
+          // 나무 전체가 부드럽게 흔들림
+          groupRef.current.rotation.x = Math.sin(t * 0.6) * 0.02;
+          groupRef.current.rotation.z = Math.cos(t * 0.4) * 0.02;
+      }
+  });
+  return <group ref={groupRef}>{children}</group>;
+}
+
 PsychologicalTreeScene.propTypes = {
   isWindy: PropTypes.bool.isRequired,
+  isAutoMode: PropTypes.bool.isRequired,
+};
+
+TreeGroupWrapper.propTypes = {
+  children: PropTypes.node.isRequired,
+  animatedParams: PropTypes.object.isRequired,
 };
 
 // --- ReportPage용 컴포넌트 ---// --- ReportPage용 컴포넌트 (성장 + 개화 로직 통합 버전) ---
