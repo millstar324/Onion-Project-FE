@@ -138,7 +138,7 @@ export default function Home() {
             )}
 
             {/* [메인 콘텐츠] */}
-            <main className="flex flex-col items-center w-full mt-[25vh]">
+            <main className="flex flex-col items-center w-full mt-[32vh]">
                 
                 {/* 제목 */}
                 <div className="text-center text-neutral-900/75 text-[clamp(2rem,5vw,3rem)] font-normal font-['Archivo'] leading-tight mb-[4vh]">
