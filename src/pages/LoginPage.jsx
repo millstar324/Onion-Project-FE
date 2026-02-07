@@ -94,51 +94,57 @@ export default function LoginPage() {
         }
     };
 
-    // 2. 회원가입 제출 핸들러 (DB 연동 코드 추가)
-    const handleSignUp = async (e) => {
+    //회원가입 막아놓기
+    const handleSignUp = (e) => {
         e.preventDefault();
-        setError('');
-    
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
-            return;
-        }
-    
-        setIsLoading(true);
-    
-        try {
-            // 🌟 1. api 인스턴스 사용
-            // Axios는 객체를 넣으면 자동으로 JSON으로 변환하고 Content-Type도 잡아줍니다.
-            await api.post('/signup', { 
-                user_id: user_id, 
-                password: password 
-            });
-    
-            // 🌟 2. Axios는 성공 시(2xx) 바로 다음 줄로 넘어옵니다.
-            // response.ok 체크 없이 바로 성공 로직을 작성하세요.
-            
-            Swal.fire({
-                title: 'Signup completed!',
-                text: 'Signup completed! Please login.',
-                icon: 'success',
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
-              });
-
-            setIsLogin(true);
-            resetForm();
-    
-        } catch (err) {
-            // 🌟 3. 에러 처리 (4xx, 5xx 에러는 모두 catch에서 잡힙니다)
-            console.error("Signup failed", err);
-            
-            // 서버가 보내준 구체적인 에러 메시지(data.detail)를 화면에 표시
-            const errorMessage = err.response?.data?.detail || 'This ID is already taken, or sign-up failed.';
-            setError(errorMessage);
-        } finally {
-            setIsLoading(false);
-        }
+        setError('Signup is currently disabled.');
     };
+
+    // // 2. 회원가입 제출 핸들러 (DB 연동 코드 추가)
+    // const handleSignUp = async (e) => {
+    //     e.preventDefault();
+    //     setError('');
+    
+    //     if (password !== confirmPassword) {
+    //         setError('Passwords do not match.');
+    //         return;
+    //     }
+    
+    //     setIsLoading(true);
+    
+    //     try {
+    //         // 🌟 1. api 인스턴스 사용
+    //         // Axios는 객체를 넣으면 자동으로 JSON으로 변환하고 Content-Type도 잡아줍니다.
+    //         await api.post('/signup', { 
+    //             user_id: user_id, 
+    //             password: password 
+    //         });
+    
+    //         // 🌟 2. Axios는 성공 시(2xx) 바로 다음 줄로 넘어옵니다.
+    //         // response.ok 체크 없이 바로 성공 로직을 작성하세요.
+            
+    //         Swal.fire({
+    //             title: 'Signup completed!',
+    //             text: 'Signup completed! Please login.',
+    //             icon: 'success',
+    //             confirmButtonText: 'OK',
+    //             confirmButtonColor: '#6D5B98' // ONION 앱 메인 컬러로 맞추면 더 좋겠죠?
+    //           });
+
+    //         setIsLogin(true);
+    //         resetForm();
+    
+    //     } catch (err) {
+    //         // 🌟 3. 에러 처리 (4xx, 5xx 에러는 모두 catch에서 잡힙니다)
+    //         console.error("Signup failed", err);
+            
+    //         // 서버가 보내준 구체적인 에러 메시지(data.detail)를 화면에 표시
+    //         const errorMessage = err.response?.data?.detail || 'This ID is already taken, or sign-up failed.';
+    //         setError(errorMessage);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
 
     return (
         <section className="bg-gray-50 dark:bg-gray-900 font-['Archivo'] transition-all duration-500">
