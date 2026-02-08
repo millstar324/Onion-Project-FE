@@ -6,7 +6,6 @@
 > **"Precisely analyzing psychological patterns hidden in your unconscious with data."**
 > An intelligent reporting service utilizing the Gemini API to extract raw truths and facilitate the user's psychological growth.
 
-🔗 **[Go to Service](https://onion-project-zeta.vercel.app/)**
 
 🔗 **[Go to Backend](https://github.com/seo-lah/Onion-Project-BE/)**
 
